@@ -1,0 +1,23 @@
+{
+  "name": "use-styles",
+  "version": "1.0.0",
+  "description": "Use styles",
+  "main": "src/index.js",
+  "repository": "https://github.com/lewisl9029/use-styles.git",
+  "author": "Lewis Liu <lewisl9029@users.noreply.github.com>",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src/*"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "react": "^16.8.0"
+  },
+  "peerDepencencies": {
+    "react": "^16.8.0"
+  }
+}
