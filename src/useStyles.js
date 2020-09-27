@@ -13,8 +13,8 @@ const supportedPseudoClasses = new Set([
   ':focus-within',
 ])
 
-const cachedRulesInternal = {}
-const insertedRulesInternal = new Set()
+const defaultCache = {}
+const defaultInsertedRules = new Set()
 
 // const measure = (name, fn) => {
 //   window.performance.mark(`${name}_start`)
@@ -33,16 +33,16 @@ const insertedRulesInternal = new Set()
 const measure = (name, fn) => fn()
 
 
-const toRules = ({ styles, cachedRules }) => {
-  // const toRules = ({ styles, pseudoClass = '', cachedRules }) => {
+const toCacheEntries = ({ styles, cache }) => {
+  // const toCacheEntries = ({ styles, pseudoClass = '', cache }) => {
   // TODO: experiment with using single rule per styles
-  return Object.entries(styles).flatMap(([name, value]) => {
+  return Object.entries(styles).map(([name, value]) => {
     // if (supportedPseudoClasses.has(name)) {
-    //   return toRules({ styles: value, pseudoClass: name, cachedRules })
+    //   return toCacheEntries({ styles: value, pseudoClass: name, cache })
     // }
 
-    if (cachedRules[name] && cachedRules[name][value]) {
-      return cachedRules[name][value]
+    if (cache[name] && cache[name][value]) {
+      return cache[name][value]
     }
 
     // const id = `${name}_${value}`
@@ -51,46 +51,39 @@ const toRules = ({ styles, cachedRules }) => {
 
     // const className = `r_${hash(id)}`
     const className = measure('hash', () => `r_${hash(id)}`)
-    // const styleName = hyphenate(name)
-    const styleName = measure('hyphenate', () => hyphenate(name))
 
     // const rule = `.${className} { ${styleName}: ${withUnit(
     //   name,
     //   value,
     // )}; }`
-    const rule = measure('withUnit', () => `.${className} { ${styleName}: ${withUnit(
-      name,
-      value,
-    )}; }`)
 
-    if (!cachedRules[name]) {
-      cachedRules[name] = {}
+
+    if (!cache[name]) {
+      cache[name] = {}
     }
 
-    cachedRules[name][value] = { id, className, rule }
+    cache[name][value] = { id, className, name, value }
 
-    return cachedRules[name][value]
+    return cache[name][value]
   })
 }
 
+
+
 export const StylesProvider = ({
   children,
-  fallback,
-  cachedRules = cachedRulesInternal,
-  insertedRules = insertedRulesInternal,
+  options = {},
+  initialCache = defaultCache,
 }) => {
-  const [stylesheet, setStylesheet] = React.useState()
+  const stylesheetRef = React.useRef()
+  const useCssTypedOm = !!(options.useCssTypedOm && window.CSS && window.CSS.number)
 
-  React.useEffect(() => {
-    if (stylesheet) {
-      return;
-    }
-    // console.log('effect')
+  const insertStylesheet = React.useCallback(() => {
     const id = `useStylesStylesheet`
     const existingElement = window.document.getElementById(id)
 
     if (existingElement) {
-      setStylesheet(existingElement.sheet)
+      stylesheetRef.current = existingElement.sheet
       return
     }
 
@@ -99,40 +92,63 @@ export const StylesProvider = ({
 
     window.document.head.appendChild(element)
 
-    setStylesheet(element.sheet)
+    stylesheetRef.current = element.sheet
+  },[])
+
+  React.useEffect(() => {
+    if (stylesheetRef.current) {
+      return;
+    }
+    insertStylesheet()
+    // console.log('effect')
+
     // return () => {
     //   // dom_.removeChild(window.document.body, element)
     // }
-  }, [])
-
-  const ready = !!stylesheet
+  }, [insertStylesheet])
 
   return React.createElement(
+    // TODO: split contexts
     cacheContext.Provider,
     {
       value: {
         insertRule: React.useCallback(
-          ({ id, rule }) => {
-            if (!stylesheet || insertedRules.has(id)) {
+          ({ id, className, name, value }) => {
+            if (!stylesheetRef.current) {
+              insertStylesheet()
+            }
+
+            if (defaultInsertedRules.has(id)) {
               // console.log('cached rule', rule)
               return
             }
 
-            // console.log('adding rule', rule)
-
-            stylesheet.insertRule(rule)
-            // mutative cache for perf
-            insertedRules.add(id)
+            if (useCssTypedOm) {
+              // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
+              // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
+              const rule = `.${className} {}`
+              const index = stylesheetRef.current.insertRule(rule)
+              stylesheetRef.current.cssRules[index].styleMap.set(name, value)
+            } else {
+              const rule = `.${className} { ${hyphenate(name)}: ${withUnit(
+                name,
+                value,
+              )}; }`
+              stylesheetRef.current.insertRule(rule)
+            }
+          // mutative cache for perf
+            defaultInsertedRules.add(id)
           },
-          [stylesheet],
+          [insertStylesheet, useCssTypedOm],
         ),
-        toRules: React.useCallback(
-          (styles) => toRules({ styles, cachedRules }),
+        toCacheEntries: React.useCallback(
+          (styles) => toCacheEntries({ styles, cache: initialCache }),
           [],
         ),
+        useCssTypedOm,
       },
     },
-    ready ? children : fallback,
+    children,
   )
 }
 
@@ -149,49 +165,49 @@ export const useStyles = (styles, dependencies) => {
     throw new Error('Please ensure usages of useStyles are contained within StylesProvider')
   }
 
-  const { insertRule, toRules } = cache
+  const { insertRule, toCacheEntries } = cache
 
-  // const rules = React.useMemo(() => toRules(styles), dependencies)
+  // const cacheEntries = React.useMemo(() => toCacheEntries(styles), dependencies)
   // console.log(dependencies)
-  const rules = measure('rules', () => React.useMemo(() => toRules(styles), dependencies))
+  const cacheEntries = measure('cacheEntries', () => React.useMemo(() => toCacheEntries(styles), dependencies))
 
   const classNames = measure('classNames', () => React.useMemo(
-    // () => rules.map(({ className }) => className).join(' '),
+    // () => cacheEntries.map(({ className }) => className).join(' '),
     () => {
-      const length = rules.length
+      const length = cacheEntries.length
       let classNames = ''
       for(let index = 0; index < length; index++) {
-        classNames+=rules[index].className + ' '
+        classNames+=cacheEntries[index].className + ' '
       }
       return classNames
     },
-    [rules],
+    [cacheEntries],
   ))
   // const classNames = React.useMemo(
-  //   // () => rules.map(({ className }) => className).join(' '),
+  //   // () => cacheEntries.map(({ className }) => className).join(' '),
   //   () => {
-  //     const length = rules.length
+  //     const length = cacheEntries.length
   //     let classNames = ''
   //     for(let index = 0; index < length; index++) {
-  //       classNames+=rules[index].className + ' '
+  //       classNames+=cacheEntries[index].className + ' '
   //     }
   //     return classNames
   //   },
-  //   [rules],
+  //   [cacheEntries],
   // )
 
 
   React.useLayoutEffect(() => {
     measure('insert', () => {
-      rules.forEach(insertRule)
+      cacheEntries.forEach(insertRule)
     })
-    // rules.forEach(insertRule)
+    // cacheEntries.forEach(insertRule)
 
     return () => {
       // This is not necessary, and hinders performance
       // stylesheet.deleteRule(index)
     }
-  }, [rules])
+  }, [cacheEntries])
 
   return classNames
 }
