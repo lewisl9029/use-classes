@@ -7,10 +7,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const appDirectory = path.resolve(__dirname);
 
 module.exports = {
-  mode: 'production',
-  devtool: 'source-map',
-  // mode: 'development',
-  // devtool: 'inline-source-map',
+  ...(process.env.NODE_ENV === 'development' ? {
+    mode: 'development',
+    devtool: 'inline-source-map',
+  }: {
+    mode: 'production',
+    devtool: 'source-map',
+  }),
   context: __dirname,
   entry: './src/index',
   output: {
