@@ -13,7 +13,9 @@
   "files": [
     "src/*"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "immutable": "^4.0.0-rc.12"
+  },
   "devDependencies": {
     "react": "^16.8.0"
   },
