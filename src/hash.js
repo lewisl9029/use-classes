@@ -1,6 +1,6 @@
 // Copied from https://github.com/emotion-js/emotion/blob/master/packages/hash/src/index.js
 
-export default function murmur2(str) {
+const murmur2 = (str) => {
   // 'm' and 'r' are mixing constants generated offline.
   // They're not really 'magic', they just happen to work well.
 
@@ -59,3 +59,30 @@ export default function murmur2(str) {
 
   return ((h ^ (h >>> 15)) >>> 0).toString(36);
 }
+
+// Copied from https://github.com/styled-components/styled-components/blob/master/packages/styled-components/src/utils/hash.js
+
+const SEED = 5381;
+
+// When we have separate strings it's useful to run a progressive
+// version of djb2 where we pretend that we're still looping over
+// the same string
+const phash = (h, x) => {
+  let i = x.length;
+
+  while (i) {
+    h = (h * 33) ^ x.charCodeAt(--i);
+  }
+
+  return h;
+};
+
+// This is a djb2 hashing function
+const hash = (x) => {
+  return phash(SEED, x);
+};
+
+// switch between readable vs faster & smaller classnames depending on environment
+const readableHash = (value) => CSS.escape(value).replace(/\\./g, '_')
+
+export default murmur2
