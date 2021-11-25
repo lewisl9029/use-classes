@@ -12,6 +12,46 @@ on:
     #   - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+
+      - id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - run: yarn --immutable
+
+      - id: yarn-cache-dir-path-benchmark
+        working-directory: ./benchmarks
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        id: yarn-cache-benchmark # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: ${{ steps.yarn-cache-dir-path-benchmark.outputs.dir }}
+          key: ${{ runner.os }}-benchmark-yarn-${{ hashFiles('./benchmarks/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-benchmark-yarn-
+
+      - working-directory: ./benchmarks
+        run: yarn --immutable
+
+      - working-directory: ./benchmarks
+        run: yarn benchmark
+
   publish-npm:
     runs-on: ubuntu-latest
     steps:
