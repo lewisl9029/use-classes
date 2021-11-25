@@ -5,6 +5,7 @@ import withUnit from "./useStyles/withUnit.js";
 import cacheContext from "./useStyles/cacheContext.js";
 
 // TODO: other perf explorations:
+//   - Default to 1:1 css style names/values, hypenation and unitless can use resolveStyle
 //   - Replace array methods with manually optimized for loops
 //   - Preallocate array size where feasible
 //   - More low-level caching and memoization
@@ -32,8 +33,15 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = (list) => [].concat(...list);
 
-const toCacheEntries = ({ stylesEntries, psuedoClass, cache }) => {
-  return stylesEntries.map(([name, value]) => {
+const toCacheEntries = ({
+  stylesEntries,
+  psuedoClass,
+  cache,
+  resolveStyle,
+}) => {
+  return stylesEntries.map(([rawName, rawValue]) => {
+    const style = { name: rawName, value: rawValue };
+    const { name, value } = resolveStyle?.(style) ?? style;
     const existingCacheEntry = cache[psuedoClass]?.[name]?.[value];
 
     if (existingCacheEntry) {
@@ -61,7 +69,7 @@ const toCacheEntries = ({ stylesEntries, psuedoClass, cache }) => {
 };
 
 // TODO: Psuedoclasses
-const toCacheEntriesLayer2 = ({ stylesEntries, cache }) => {
+const toCacheEntriesLayer2 = ({ stylesEntries, cache, resolveStyle }) => {
   const { withPsuedoClass, withoutPsuedoClass } = stylesEntries.reduce(
     (groups, entry) => {
       const key = entry[0];
@@ -76,13 +84,18 @@ const toCacheEntriesLayer2 = ({ stylesEntries, cache }) => {
   );
 
   return [
-    ...toCacheEntries({ stylesEntries: withoutPsuedoClass, cache }),
+    ...toCacheEntries({
+      stylesEntries: withoutPsuedoClass,
+      cache,
+      resolveStyle,
+    }),
     ...flatten(
       withPsuedoClass.map(([psuedoClass, styles]) =>
         toCacheEntries({
           stylesEntries: Object.entries(styles),
           psuedoClass,
           cache,
+          resolveStyle,
         })
       )
     ),
@@ -166,8 +179,12 @@ export const StylesProvider = ({
           [insertStylesheet, useCssTypedOm]
         ),
         toCacheEntries: React.useCallback(
-          (stylesEntries) =>
-            toCacheEntriesLayer2({ stylesEntries, cache: initialCache }),
+          (stylesEntries, { resolveStyle }) =>
+            toCacheEntriesLayer2({
+              stylesEntries,
+              cache: initialCache,
+              resolveStyle,
+            }),
           []
         ),
         useCssTypedOm,
@@ -177,10 +194,7 @@ export const StylesProvider = ({
   );
 };
 
-export const useStylesEntries = (
-  stylesEntries
-  // { resolveStyle } = {},
-) => {
+export const useStylesEntries = (stylesEntries, { resolveStyle } = {}) => {
   const cache = React.useContext(cacheContext);
 
   if (cache === undefined) {
@@ -192,7 +206,10 @@ export const useStylesEntries = (
   const { insertRule, toCacheEntries } = cache;
 
   const cacheEntries = measure("toCacheEntries", () =>
-    React.useMemo(() => toCacheEntries(stylesEntries), [stylesEntries])
+    React.useMemo(
+      () => toCacheEntries(stylesEntries, { resolveStyle }),
+      [stylesEntries, resolveStyle]
+    )
   );
 
   const classNames = measure("classNames", () =>
@@ -223,10 +240,11 @@ export const useStylesEntries = (
   return classNames + " ";
 };
 
-export const useStyles = (styles) => {
+export const useStyles = (styles, { resolveStyle } = {}) => {
   return useStylesEntries(
     measure("entries", () =>
-      React.useMemo(() => Object.entries(styles), [styles])
-    )
+      React.useMemo(() => Object.entries(styles), [styles, resolveStyle])
+    ),
+    { resolveStyle }
   );
 };
