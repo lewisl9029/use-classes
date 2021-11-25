@@ -1891,6 +1891,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lewisl9029/use-styles@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@lewisl9029/use-styles@npm:3.1.1"
+  checksum: 63c79bcd129aabe425e6f22e27a6d78a0aae35dfb086f78295c2e4a9b5beedb38207786f28e15eca9377da94dea2bae938abebd1f10ec6ff29bf2c2162557380
+  languageName: node
+  linkType: hard
+
 "@mrmlnc/readdir-enhanced@npm:^2.2.1":
   version: 2.2.1
   resolution: "@mrmlnc/readdir-enhanced@npm:2.2.1"
@@ -1956,6 +1963,7 @@ __metadata:
     "@emotion/core": ^10.0.10
     "@emotion/react": ^11.6.0
     "@emotion/styled": ^10.0.12
+    "@lewisl9029/use-styles": ^3.1.1
     "@webpack-cli/serve": ^0.2.0
     aphrodite: ^2.2.0
     babel-loader: ^8.0.6
