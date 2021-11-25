@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.8.6",
   "scripts": {
-    "build": "webpack-cli --config webpack.config.js",
+    "build": "ASSET_PATH='./' webpack-cli --config webpack.config.js",
     "start": "webpack-dev-server",
     "start-dev": "cross-env NODE_ENV=development webpack-dev-server",
     "benchmark": "node ./run-headless.js"

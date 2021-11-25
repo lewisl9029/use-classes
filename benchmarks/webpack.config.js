@@ -4,8 +4,6 @@ const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
-const appDirectory = path.resolve(__dirname);
-
 module.exports = {
   ...(process.env.NODE_ENV === "development"
     ? {
@@ -17,11 +15,11 @@ module.exports = {
         devtool: "source-map"
       }),
   context: __dirname,
-  entry: "./src/index",
+  entry: "./src/index.js",
   output: {
-    path: path.resolve(appDirectory, "dist"),
+    path: path.resolve(__dirname, "dist"),
     filename: "bundle.js",
-    publicPath: "./"
+    publicPath: process.env.ASSET_PATH || "/"
   },
   performance: {
     hints: false
@@ -40,14 +38,14 @@ module.exports = {
       },
       {
         test: /\.js$/,
-        include: [path.join(appDirectory, "src")],
+        include: [path.resolve(__dirname, "src")],
         use: {
           loader: "babel-loader"
         }
       },
       {
         test: /\.js$/,
-        include: [path.resolve(appDirectory, "../src")],
+        include: [path.resolve(__dirname, "../src")],
         use: {
           loader: "babel-loader"
         }
