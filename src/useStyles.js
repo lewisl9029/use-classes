@@ -33,42 +33,6 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = (list) => [].concat(...list);
 
-const toCacheEntries = ({
-  stylesEntries,
-  psuedoClass,
-  cache,
-  resolveStyle,
-}) => {
-  return stylesEntries.map(([rawName, rawValue]) => {
-    const style = { name: rawName, value: rawValue };
-    const { name, value } = resolveStyle?.(style) ?? style;
-    const existingCacheEntry = cache[psuedoClass]?.[name]?.[value];
-
-    if (existingCacheEntry) {
-      return existingCacheEntry;
-    }
-
-    // psuedoclass need to be a part of id to allow distinct targetting
-    const id = `${psuedoClass}_${name}_${value}`;
-    // console.log('uncached rule: ' + id)
-
-    const className = `r_${hash(id)}`;
-    if (!cache[psuedoClass]) {
-      cache[psuedoClass] = {};
-    }
-    if (!cache[psuedoClass][name]) {
-      cache[psuedoClass][name] = {};
-    }
-
-    const cacheEntry = { id, className, psuedoClass, name, value };
-
-    cache[psuedoClass][name][value] = cacheEntry;
-
-    return cacheEntry;
-  });
-};
-
-// Alternative version with 1d cache, benchmarks much slower
 // const toCacheEntries = ({
 //   stylesEntries,
 //   psuedoClass,
@@ -78,25 +42,61 @@ const toCacheEntries = ({
 //   return stylesEntries.map(([rawName, rawValue]) => {
 //     const style = { name: rawName, value: rawValue };
 //     const { name, value } = resolveStyle?.(style) ?? style;
-//     // psuedoclass need to be a part of id to allow distinct targetting
-//     const id = `${psuedoClass}_${name}_${value}`;
-//     const existingCacheEntry = cache[id];
+//     const existingCacheEntry = cache[psuedoClass]?.[name]?.[value];
 
 //     if (existingCacheEntry) {
 //       return existingCacheEntry;
 //     }
 
-//     // // console.log('uncached rule: ' + id)
+//     // psuedoclass need to be a part of id to allow distinct targetting
+//     const id = `${psuedoClass}_${name}_${value}`;
+//     // console.log('uncached rule: ' + id)
 
 //     const className = `r_${hash(id)}`;
+//     if (!cache[psuedoClass]) {
+//       cache[psuedoClass] = {};
+//     }
+//     if (!cache[psuedoClass][name]) {
+//       cache[psuedoClass][name] = {};
+//     }
 
 //     const cacheEntry = { id, className, psuedoClass, name, value };
 
-//     cache[id] = cacheEntry;
+//     cache[psuedoClass][name][value] = cacheEntry;
 
 //     return cacheEntry;
 //   });
 // };
+
+// Alternative version with 1d cache, benchmarks much slower
+const toCacheEntries = ({
+  stylesEntries,
+  psuedoClass,
+  cache,
+  resolveStyle,
+}) => {
+  return stylesEntries.map(([rawName, rawValue]) => {
+    const style = { name: rawName, value: rawValue };
+    const { name, value } = resolveStyle?.(style) ?? style;
+    // psuedoclass need to be a part of id to allow distinct targetting
+    const id = `${psuedoClass}_${name}_${value}`;
+    const existingCacheEntry = cache[id];
+
+    if (existingCacheEntry) {
+      return existingCacheEntry;
+    }
+
+    // // console.log('uncached rule: ' + id)
+
+    const className = `r_${hash(id)}`;
+
+    const cacheEntry = { id, className, psuedoClass, name, value };
+
+    cache[id] = cacheEntry;
+
+    return cacheEntry;
+  });
+};
 
 // TODO: Psuedoclasses
 const toCacheEntriesLayer2 = ({ stylesEntries, cache, resolveStyle }) => {
