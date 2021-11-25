@@ -21,6 +21,10 @@ jobs:
           node-version: 16
           registry-url: https://registry.npmjs.org/
 
+      - id: install-xvfb
+        run: |
+          sudo apt-get install xvfb
+
       - id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
