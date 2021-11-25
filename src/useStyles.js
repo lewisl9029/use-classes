@@ -191,13 +191,11 @@ export const useStylesEntries = (
 
   const { insertRule, toCacheEntries } = cache;
 
-  const cacheEntries = measure(
-    "toCacheEntries",
+  const cacheEntries = measure("toCacheEntries", () =>
     React.useMemo(() => toCacheEntries(stylesEntries), [stylesEntries])
   );
 
-  const classNames = measure(
-    "classNames",
+  const classNames = measure("classNames", () =>
     React.useMemo(() => {
       const length = cacheEntries.length;
       let classNames = "";
@@ -227,6 +225,8 @@ export const useStylesEntries = (
 
 export const useStyles = (styles) => {
   return useStylesEntries(
-    React.useMemo(() => Object.entries(styles), [styles])
+    measure("entries", () =>
+      React.useMemo(() => Object.entries(styles), [styles])
+    )
   );
 };
