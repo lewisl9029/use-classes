@@ -1,7 +1,11 @@
 const path = require("path");
 const puppeteer = require("puppeteer");
 
-const implementations = ["use-styles", "emotion-v11", "styled-components"];
+const implementations = [
+  "emotion-v11",
+  "styled-components-css-objects",
+  "use-styles"
+];
 
 const tests = ["Mount deep tree", "Mount wide tree", "Update dynamic styles"];
 const tracing = process.argv.some(arg => arg.indexOf("tracing") > -1);
