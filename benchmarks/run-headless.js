@@ -1,41 +1,62 @@
-const path = require('path');
-const puppeteer = require('puppeteer');
+const path = require("path");
+const puppeteer = require("puppeteer");
 
-const tests = ['Mount deep tree', 'Mount wide tree', 'Update dynamic styles'];
-const tracing = process.argv.some(arg => arg.indexOf('tracing') > -1);
+const implementations = ["use-styles", "emotion-v11", "styled-components"];
+
+const tests = ["Mount deep tree", "Mount wide tree", "Update dynamic styles"];
+const tracing = process.argv.some(arg => arg.indexOf("tracing") > -1);
 
 if (tracing) {
   console.log(
-    '\nTracing enabled. (note that this might impact benchmark results, we recommend leaving this turned off unless you need a trace)'
+    "\nTracing enabled. (note that this might impact benchmark results, we recommend leaving this turned off unless you need a trace)"
   );
 }
 
 (async () => {
-  console.log('\nStarting headless browser...');
-  const browser = await puppeteer.launch();
+  console.log("\nStarting headless browser...");
+  const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
-  console.log('Opening benchmark app...');
-  await page.goto(`file://${path.join(__dirname, './index.html')}`);
+  console.log("Opening benchmark app...");
+  await page.goto(`file://${path.resolve(__dirname, "./dist/index.html")}`);
 
   console.log(
-    'Running benchmarks... (this may take a minute or two; do not use your machine while these are running!)'
+    "Running benchmarks... (this may take a minute or two; do not use your machine while these are running!)"
   );
-  for (let i = 0; i < tests.length; i++) {
-    const test = tests[i];
-    const traceFile = `${test.toLowerCase().replace(/\s/g, '-')}-trace.json`;
-    // styled-components is auto-selected, so all we gotta do is select the benchmark and press "Run"
-    await page.select('[data-testid="benchmark-picker"]', test);
-    await page.waitForSelector('[data-testid="run-button"]');
-    if (tracing) await page.tracing.start({ path: traceFile });
-    await page.click('[data-testid="run-button"]');
-    await page.waitForSelector(`[data-testid="${test} results"]`);
-    if (tracing) await page.tracing.stop();
-    const result = await page.$eval(`[data-testid="${test} results"]`, node => node.innerText);
-    console.log(`\n---${test}---`);
-    console.log(result);
-    console.log('Trace written to', traceFile);
-  }
 
-  console.log('Done!');
+  await implementations.reduce(
+    async (previousImplementation, implementation) => {
+      await previousImplementation;
+
+      await page.select('[data-testid="library-picker"]', implementation);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      await tests.reduce(async (previousTest, test) => {
+        await previousTest;
+        const traceFile = `${implementation}_${test
+          .toLowerCase()
+          .replace(/\s/g, "-")}_trace.json`;
+        await page.select('[data-testid="benchmark-picker"]', test);
+        await page.waitForSelector('[data-testid="run-button"]');
+        if (tracing) await page.tracing.start({ path: traceFile });
+        await page.click('[data-testid="run-button"]');
+        await page.waitForSelector(`[data-testid="${test} results"]`);
+        if (tracing) await page.tracing.stop();
+        const result = await page.$eval(
+          `[data-testid="${test} results"]`,
+          node => node.innerText
+        );
+        console.log(`\n---${implementation}---${test}---`);
+        console.log(result);
+        if (tracing) {
+          console.log("Trace written to", traceFile);
+        }
+      }, Promise.resolve());
+
+      await page.reload();
+    },
+    Promise.resolve()
+  );
+
+  console.log("Done!");
   await browser.close();
 })();

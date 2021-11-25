@@ -1,36 +1,53 @@
 /* eslint-disable */
 
-import { Picker, StyleSheet, ScrollView, TouchableOpacity, View } from 'react-native';
-import React, { Component } from 'react';
-import Benchmark from './Benchmark';
-import Button from './Button';
-import { IconClear, IconEye } from './Icons';
-import ReportCard from './ReportCard';
-import Text from './Text';
-import Layout from './Layout';
-import { colors } from './theme';
+import {
+  Picker,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  View
+} from "react-native";
+import React, { Component } from "react";
+import Benchmark from "./Benchmark";
+import Button from "./Button";
+import { IconClear, IconEye } from "./Icons";
+import ReportCard from "./ReportCard";
+import Text from "./Text";
+import Layout from "./Layout";
+import { colors } from "./theme";
 
 const Overlay = () => <View style={[StyleSheet.absoluteFill, { zIndex: 2 }]} />;
 
 export default class App extends Component {
-  static displayName = '@app/App';
+  static displayName = "@app/App";
 
   constructor(props, context) {
     super(props, context);
     const currentBenchmarkName = Object.keys(props.tests)[0];
     this.state = {
       currentBenchmarkName,
-      currentLibraryName: 'use-styles',
-      status: 'idle',
-      results: [],
+      currentLibraryName: "use-styles",
+      status: "idle",
+      results: []
     };
   }
 
   render() {
     const { tests } = this.props;
-    const { currentBenchmarkName, status, currentLibraryName, results } = this.state;
-    const currentImplementation = tests[currentBenchmarkName][currentLibraryName];
-    const { Component, Provider, getComponentProps, sampleCount } = currentImplementation;
+    const {
+      currentBenchmarkName,
+      status,
+      currentLibraryName,
+      results
+    } = this.state;
+    const currentImplementation =
+      tests[currentBenchmarkName][currentLibraryName];
+    const {
+      Component,
+      Provider,
+      getComponentProps,
+      sampleCount
+    } = currentImplementation;
 
     return (
       <Layout
@@ -39,25 +56,32 @@ export default class App extends Component {
             <View style={styles.pickers}>
               <View style={styles.pickerContainer}>
                 <Text style={styles.pickerTitle}>Library</Text>
-                <Text style={{ fontWeight: 'bold' }}>{currentLibraryName}</Text>
+                <Text style={{ fontWeight: "bold" }}>{currentLibraryName}</Text>
 
                 <Picker
-                  enabled={status !== 'running'}
+                  enabled={status !== "running"}
                   onValueChange={this._handleChangeLibrary}
                   selectedValue={currentLibraryName}
                   style={styles.picker}
+                  testID="library-picker"
                 >
                   {Object.keys(tests[currentBenchmarkName]).map(libraryName => (
-                    <Picker.Item key={libraryName} label={libraryName} value={libraryName} />
+                    <Picker.Item
+                      key={libraryName}
+                      label={libraryName}
+                      value={libraryName}
+                    />
                   ))}
                 </Picker>
               </View>
               <View style={{ width: 1, backgroundColor: colors.fadedGray }} />
               <View style={styles.pickerContainer}>
                 <Text style={styles.pickerTitle}>Benchmark</Text>
-                <Text testID="current-benchmark-name">{currentBenchmarkName}</Text>
+                <Text testID="current-benchmark-name">
+                  {currentBenchmarkName}
+                </Text>
                 <Picker
-                  enabled={status !== 'running'}
+                  enabled={status !== "running"}
                   onValueChange={this._handleChangeBenchmark}
                   selectedValue={currentBenchmarkName}
                   style={styles.picker}
@@ -70,19 +94,19 @@ export default class App extends Component {
               </View>
             </View>
 
-            <View style={{ flexDirection: 'row', height: 50 }}>
+            <View style={{ flexDirection: "row", height: 50 }}>
               <View style={styles.grow}>
                 <Button
                   onPress={this._handleStart}
                   style={styles.button}
-                  title={status === 'running' ? 'Running…' : 'Run'}
-                  disabled={status === 'running'}
+                  title={status === "running" ? "Running…" : "Run"}
+                  disabled={status === "running"}
                   testID="run-button"
                 />
               </View>
             </View>
 
-            {status === 'running' ? <Overlay /> : null}
+            {status === "running" ? <Overlay /> : null}
           </View>
         }
         listPanel={
@@ -110,7 +134,7 @@ export default class App extends Component {
                     stdDev={r.stdDev}
                   />
                 ))}
-                {status === 'running' ? (
+                {status === "running" ? (
                   <ReportCard
                     benchmarkName={currentBenchmarkName}
                     libraryName={currentLibraryName}
@@ -118,7 +142,7 @@ export default class App extends Component {
                 ) : null}
               </ScrollView>
             </View>
-            {status === 'running' ? <Overlay /> : null}
+            {status === "running" ? <Overlay /> : null}
           </View>
         }
         viewPanel={
@@ -130,7 +154,7 @@ export default class App extends Component {
             </View>
 
             <Provider>
-              {status === 'running' ? (
+              {status === "running" ? (
                 <React.Fragment>
                   <View ref={this._setBenchWrapperRef}>
                     <Benchmark
@@ -140,7 +164,7 @@ export default class App extends Component {
                       onComplete={this._createHandleComplete({
                         sampleCount,
                         benchmarkName: currentBenchmarkName,
-                        libraryName: currentLibraryName,
+                        libraryName: currentLibraryName
                       })}
                       ref={this._setBenchRef}
                       sampleCount={sampleCount}
@@ -154,7 +178,7 @@ export default class App extends Component {
               )}
             </Provider>
 
-            {status === 'running' ? <Overlay /> : null}
+            {status === "running" ? <Overlay /> : null}
           </View>
         }
       />
@@ -171,7 +195,7 @@ export default class App extends Component {
 
   _handleStart = () => {
     this.setState(
-      () => ({ status: 'running' }),
+      () => ({ status: "running" }),
       () => {
         if (this._shouldHideBenchmark && this._benchWrapperRef) {
           this._benchWrapperRef.setNativeProps({ style: { opacity: 0 } });
@@ -187,12 +211,16 @@ export default class App extends Component {
     this._shouldHideBenchmark = !this._shouldHideBenchmark;
     if (this._benchWrapperRef) {
       this._benchWrapperRef.setNativeProps({
-        style: { opacity: this._shouldHideBenchmark ? 0 : 1 },
+        style: { opacity: this._shouldHideBenchmark ? 0 : 1 }
       });
     }
   };
 
-  _createHandleComplete = ({ benchmarkName, libraryName, sampleCount }) => results => {
+  _createHandleComplete = ({
+    benchmarkName,
+    libraryName,
+    sampleCount
+  }) => results => {
     this.setState(
       state => ({
         results: state.results.concat([
@@ -200,10 +228,10 @@ export default class App extends Component {
             ...results,
             benchmarkName,
             libraryName,
-            libraryVersion: this.props.tests[benchmarkName][libraryName].version,
-          },
+            libraryVersion: this.props.tests[benchmarkName][libraryName].version
+          }
         ]),
-        status: 'complete',
+        status: "complete"
       }),
       this._scrollToEnd
     );
@@ -240,61 +268,61 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   viewPanel: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    backgroundColor: 'black',
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: "black"
   },
   iconEye: {
-    color: 'white',
-    height: 32,
+    color: "white",
+    height: 32
   },
   iconEyeContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     right: 10,
-    zIndex: 1,
+    zIndex: 1
   },
   iconClearContainer: {
-    height: '100%',
-    marginLeft: 5,
+    height: "100%",
+    marginLeft: 5
   },
   grow: {
-    flex: 1,
+    flex: 1
   },
   listPanel: {
     flex: 1,
-    width: '100%',
-    marginHorizontal: 'auto',
+    width: "100%",
+    marginHorizontal: "auto"
   },
   listBar: {
     padding: 5,
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     backgroundColor: colors.fadedGray,
     borderBottomWidth: 1,
     borderBottomColor: colors.mediumGray,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end"
   },
   pickers: {
-    flexDirection: 'row',
+    flexDirection: "row"
   },
   pickerContainer: {
     flex: 1,
-    padding: 5,
+    padding: 5
   },
   pickerTitle: {
     fontSize: 12,
-    color: colors.deepGray,
+    color: colors.deepGray
   },
   picker: {
     ...StyleSheet.absoluteFillObject,
-    appearance: 'none',
+    appearance: "none",
     opacity: 0,
-    width: '100%',
+    width: "100%"
   },
   button: {
     borderRadius: 0,
-    flex: 1,
-  },
+    flex: 1
+  }
 });

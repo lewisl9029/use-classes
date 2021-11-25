@@ -1,68 +1,77 @@
 // @flow
-const webpack = require('webpack');
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require("webpack");
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
+const path = require("path");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const appDirectory = path.resolve(__dirname);
 
 module.exports = {
-  ...(process.env.NODE_ENV === 'development' ? {
-    mode: 'development',
-    devtool: 'inline-source-map',
-  }: {
-    mode: 'production',
-    devtool: 'source-map',
-  }),
+  ...(process.env.NODE_ENV === "development"
+    ? {
+        mode: "development",
+        devtool: "inline-source-map"
+      }
+    : {
+        mode: "production",
+        devtool: "source-map"
+      }),
   context: __dirname,
-  entry: './src/index',
+  entry: "./src/index",
   output: {
-    path: path.resolve(appDirectory, 'dist'),
-    filename: 'bundle.js',
-    publicPath: '/'
+    path: path.resolve(appDirectory, "dist"),
+    filename: "bundle.js",
+    publicPath: "./"
   },
   performance: {
-    hints: false,
+    hints: false
   },
   module: {
     rules: [
       {
         test: /\.css$/,
         use: [
-          'style-loader',
+          "style-loader",
           {
-            loader: 'css-loader',
-            options: { modules: true, localIdentName: '[hash:base64:8]' },
-          },
-        ],
+            loader: "css-loader",
+            options: { modules: true, localIdentName: "[hash:base64:8]" }
+          }
+        ]
       },
       {
         test: /\.js$/,
-        include: [path.join(appDirectory, 'src')],
+        include: [path.join(appDirectory, "src")],
         use: {
-          loader: 'babel-loader',
-        },
+          loader: "babel-loader"
+        }
       },
-    ],
+      {
+        test: /\.js$/,
+        include: [path.resolve(appDirectory, "../src")],
+        use: {
+          loader: "babel-loader"
+        }
+      }
+    ]
   },
   plugins: [
     new BundleAnalyzerPlugin({
-      analyzerMode: 'static',
-      openAnalyzer: false,
+      analyzerMode: "static",
+      openAnalyzer: false
     }),
 
     new webpack.DefinePlugin({
-      __VERSION__: JSON.stringify('benchmark'),
+      __VERSION__: JSON.stringify("benchmark")
     }),
 
     new HtmlWebpackPlugin({
-      title: 'Performance tests',
-      template: './index.html'
-    }),
+      title: "Performance tests",
+      template: "./index.html"
+    })
   ],
   resolve: {
     alias: {
-      'react-native': 'react-native-web'
-    },
-  },
+      "react-native": "react-native-web"
+    }
+  }
 };
