@@ -54,6 +54,9 @@ jobs:
         run: yarn --immutable
 
       - working-directory: ./benchmarks
+        run: yarn build
+
+      - working-directory: ./benchmarks
         run: xvfb-run --auto-servernum yarn benchmark
 
   publish-npm:
