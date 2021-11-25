@@ -1,1 +1,1 @@
-export { useStyles, StylesProvider } from './useStyles'
+export { useStyles, StylesProvider } from "./useStyles.js";
