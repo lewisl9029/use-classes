@@ -49,10 +49,10 @@ const toCacheEntries = ({
     }
 
     // psuedoclass need to be a part of id to allow distinct targetting
-    const id = measure("id", () => `${psuedoClass}_${name}_${value}`);
+    const id = `${psuedoClass}_${name}_${value}`;
     // console.log('uncached rule: ' + id)
 
-    const className = measure("hash", () => `r_${hash(id)}`);
+    const className = `r_${hash(id)}`;
     if (!cache[psuedoClass]) {
       cache[psuedoClass] = {};
     }
@@ -67,6 +67,36 @@ const toCacheEntries = ({
     return cacheEntry;
   });
 };
+
+// Alternative version with 1d cache, benchmarks much slower
+// const toCacheEntries = ({
+//   stylesEntries,
+//   psuedoClass,
+//   cache,
+//   resolveStyle,
+// }) => {
+//   return stylesEntries.map(([rawName, rawValue]) => {
+//     const style = { name: rawName, value: rawValue };
+//     const { name, value } = resolveStyle?.(style) ?? style;
+//     // psuedoclass need to be a part of id to allow distinct targetting
+//     const id = `${psuedoClass}_${name}_${value}`;
+//     const existingCacheEntry = cache[id];
+
+//     if (existingCacheEntry) {
+//       return existingCacheEntry;
+//     }
+
+//     // // console.log('uncached rule: ' + id)
+
+//     const className = `r_${hash(id)}`;
+
+//     const cacheEntry = { id, className, psuedoClass, name, value };
+
+//     cache[id] = cacheEntry;
+
+//     return cacheEntry;
+//   });
+// };
 
 // TODO: Psuedoclasses
 const toCacheEntriesLayer2 = ({ stylesEntries, cache, resolveStyle }) => {
@@ -197,54 +227,62 @@ export const StylesProvider = ({
 export const useStylesEntries = (stylesEntries, { resolveStyle } = {}) => {
   const cache = React.useContext(cacheContext);
 
-  if (cache === undefined) {
-    throw new Error(
-      "Please ensure usages of useStyles are contained within StylesProvider"
-    );
-  }
+  // if (cache === undefined) {
+  //   throw new Error(
+  //     "Please ensure usages of useStyles are contained within StylesProvider"
+  //   );
+  // }
 
   const { insertRule, toCacheEntries } = cache;
 
-  const cacheEntries = measure("toCacheEntries", () =>
-    React.useMemo(
-      () => toCacheEntries(stylesEntries, { resolveStyle }),
-      [stylesEntries, resolveStyle]
-    )
-  );
+  const cacheEntries = toCacheEntries(stylesEntries, { resolveStyle });
 
-  const classNames = measure("classNames", () =>
-    React.useMemo(() => {
-      const length = cacheEntries.length;
-      let classNames = "";
-      for (let index = 0; index < length; index++) {
-        classNames += cacheEntries[index].className + " ";
-      }
+  // const cacheEntries = measure("toCacheEntries", () =>
+  //   React.useMemo(
+  //     () => toCacheEntries(stylesEntries, { resolveStyle }),
+  //     [stylesEntries, resolveStyle]
+  //   )
+  // );
 
-      return classNames;
-    }, [cacheEntries])
-  );
+  let classNames = "";
+  for (let index = 0; index < cacheEntries.length; index++) {
+    classNames += cacheEntries[index].className + " ";
+  }
+  // const classNames = measure("classNames", () =>
+  //   React.useMemo(() => {
+  //     const length = cacheEntries.length;
+  //     let classNames = "";
+  //     for (let index = 0; index < length; index++) {
+  //       classNames += cacheEntries[index].className + " ";
+  //     }
+
+  //     return classNames;
+  //   }, [cacheEntries])
+  // );
 
   React.useLayoutEffect(() => {
-    measure("insert", () => {
-      cacheEntries.forEach(insertRule);
-    });
-    // cacheEntries.forEach(insertRule)
+    // measure("insert", () => {
+    //   cacheEntries.forEach(insertRule);
+    // });
+    cacheEntries.forEach(insertRule);
 
     return () => {
       // This is not necessary, and hinders performance
       // stylesheet.deleteRule(index)
     };
-  }, [cacheEntries]);
+    // }, [cacheEntries]);
+  });
 
   // Add space to facilitate concatenation
   return classNames + " ";
 };
 
 export const useStyles = (styles, { resolveStyle } = {}) => {
-  return useStylesEntries(
-    measure("entries", () =>
-      React.useMemo(() => Object.entries(styles), [styles, resolveStyle])
-    ),
-    { resolveStyle }
-  );
+  return useStylesEntries(Object.entries(styles), { resolveStyle });
+  // return useStylesEntries(
+  //   measure("entries", () =>
+  //     React.useMemo(() => Object.entries(styles), [styles, resolveStyle])
+  //   ),
+  //   { resolveStyle }
+  // );
 };
