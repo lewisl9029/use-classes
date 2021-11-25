@@ -4,32 +4,56 @@
     {
       "name": "use-styles",
       "url": "dist/index.html?library=use-styles&benchmark=deep",
-      "measurement": "global"
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     },
     {
       "name": "use-styles-css-typed-om",
       "url": "dist/index.html?library=use-styles-css-typed-om&benchmark=deep",
-      "measurement": "global"
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     },
     {
       "name": "use-styles-published",
       "url": "dist/index.html?library=use-styles-published&benchmark=deep",
-      "measurement": "global"
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     },
     {
       "name": "use-styles-published-css-typed-om",
       "url": "dist/index.html?library=use-styles-published-css-typed-om&benchmark=deep",
-      "measurement": "global"
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     },
     {
       "name": "emotion",
       "url": "dist/index.html?library=emotion-v11&benchmark=deep",
-      "measurement": "global"
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     },
     {
       "name": "styled-components",
       "url": "dist/index.html?library=styled-components-css-objects&benchmark=deep",
-      "measurement": "global"
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     }
   ]
 }
