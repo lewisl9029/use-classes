@@ -23,13 +23,27 @@ export default class App extends Component {
 
   constructor(props, context) {
     super(props, context);
-    const currentBenchmarkName = Object.keys(props.tests)[0];
+
+    const params = new URLSearchParams(self.location.search);
+
+    const benchmarkName = {
+      deep: "Mount deep tree",
+      wide: "Mount wide tree",
+      dynamic: "Update dynamic styles"
+    }[params.get("benchmark")];
+
+    const libraryName = params.get("library");
+
     this.state = {
-      currentBenchmarkName,
-      currentLibraryName: "use-styles",
+      currentBenchmarkName: benchmarkName ?? Object.keys(props.tests)[0],
+      currentLibraryName: libraryName ?? "use-styles",
       status: "idle",
       results: []
     };
+  }
+
+  componentDidMount() {
+    requestIdleCallback(() => this._handleStart());
   }
 
   render() {
@@ -221,6 +235,7 @@ export default class App extends Component {
     libraryName,
     sampleCount
   }) => results => {
+    self.tachometerResult = results.mean;
     this.setState(
       state => ({
         results: state.results.concat([

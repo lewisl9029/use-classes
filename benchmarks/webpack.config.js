@@ -21,6 +21,9 @@ module.exports = {
     filename: "bundle.js",
     publicPath: process.env.ASSET_PATH || "/"
   },
+  optimization: {
+    minimize: false
+  },
   performance: {
     hints: false
   },
