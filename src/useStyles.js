@@ -1,11 +1,8 @@
 import * as React from "react";
 import hash from "./useStyles/hash.js";
-import hyphenate from "./hyphenate.js";
-import withUnit from "./withUnit.js";
 import cacheContext from "./useStyles/cacheContext.js";
 
 // TODO: other perf explorations:
-//   - Default to 1:1 css style names/values, hypenation and unitless can use resolveStyle
 //   - Replace array methods with manually optimized for loops
 //   - Preallocate array size where feasible
 //   - More low-level caching and memoization
@@ -201,9 +198,7 @@ export const StylesProvider = ({
               const index = stylesheetRef.current.insertRule(rule);
               stylesheetRef.current.cssRules[index].styleMap.set(name, value);
             } else {
-              const rule = `.${className}${psuedoClass} { ${hyphenate(
-                name
-              )}: ${withUnit(name, value)}; }`;
+              const rule = `.${className}${psuedoClass} { ${name}: ${value}; }`;
               stylesheetRef.current.insertRule(rule);
             }
             // mutative cache for perf
@@ -227,7 +222,7 @@ export const StylesProvider = ({
   );
 };
 
-export const useStylesEntries = (stylesEntries, { resolveStyle } = {}) => {
+export const useStyles = (styles, { resolveStyle } = {}) => {
   const cache = React.useContext(cacheContext);
 
   // if (cache === undefined) {
@@ -238,7 +233,7 @@ export const useStylesEntries = (stylesEntries, { resolveStyle } = {}) => {
 
   const { insertRule, toCacheEntries } = cache;
 
-  const cacheEntries = toCacheEntries(stylesEntries, { resolveStyle });
+  const cacheEntries = toCacheEntries(Object.entries(styles), { resolveStyle });
 
   // const cacheEntries = measure("toCacheEntries", () =>
   //   React.useMemo(
@@ -278,14 +273,4 @@ export const useStylesEntries = (stylesEntries, { resolveStyle } = {}) => {
 
   // Add space to facilitate concatenation
   return classNames + " ";
-};
-
-export const useStyles = (styles, { resolveStyle } = {}) => {
-  return useStylesEntries(Object.entries(styles), { resolveStyle });
-  // return useStylesEntries(
-  //   measure("entries", () =>
-  //     React.useMemo(() => Object.entries(styles), [styles, resolveStyle])
-  //   ),
-  //   { resolveStyle }
-  // );
 };

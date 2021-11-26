@@ -1,5 +1,5 @@
 import React from "react";
-import { StylesProvider } from "@lewisl9029/use-styles";
+import { StylesProvider } from "./useStyles.js";
 import View from "./View";
 
 export default function Provider({ children }) {

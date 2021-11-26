@@ -1,7 +1,5 @@
-import styled from "@emotion/styled";
 import React from "react";
-import { useStyles } from "../../../../src/useStyles.js";
-import View from "./View";
+import { useStyles } from "./useStyles.js";
 
 const styles = {
   outer: {
@@ -35,21 +33,6 @@ const styles = {
   }
 };
 
-// const Box = styled(View)(
-//   p => styles[`color${p.color}`],
-//   p => p.fixed && styles.fixed,
-//   p => p.layout === 'row' && styles.row,
-//   p => p.outer && styles.outer
-// );
-
-// Box.defaultProps = {
-//   fixed: false,
-//   layout: 'column',
-//   outer: false,
-// };
-
-// export default Box;
-
 export default function Box({
   color,
   fixed = false,
@@ -57,31 +40,26 @@ export default function Box({
   outer = false,
   ...props
 }) {
-  const className = useStyles(
-    {
-      "align-items": "stretch",
-      "border-width": 0,
-      "border-style": "solid",
-      "box-sizing": "border-box",
-      display: "flex",
-      "flex-basis": "auto",
-      "flex-direction": "column",
-      "flex-shrink": 0,
-      margin: 0,
-      padding: 0,
-      position: "relative",
-      // fix flexbox bugs
-      "min-height": 0,
-      "min-width": 0,
-      ...styles[`color${color}`],
-      ...(fixed ? styles.fixed : {}),
-      ...(layout === "row" ? styles.row : {}),
-      ...(outer ? styles.outer : {})
-    },
-    [color, fixed, layout, outer]
-  );
-
-  // console.log(className)
+  const className = useStyles({
+    "align-items": "stretch",
+    "border-width": "0",
+    "border-style": "solid",
+    "box-sizing": "border-box",
+    display: "flex",
+    "flex-basis": "auto",
+    "flex-direction": "column",
+    "flex-shrink": "0",
+    margin: "0",
+    padding: "0",
+    position: "relative",
+    // fix flexbox bugs
+    "min-height": "0",
+    "min-width": "0",
+    ...styles[`color${color}`],
+    ...(fixed ? styles.fixed : {}),
+    ...(layout === "row" ? styles.row : {}),
+    ...(outer ? styles.outer : {})
+  });
 
   return (
     <div className={className} {...{ color, fixed, layout, outer, ...props }} />
