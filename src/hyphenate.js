@@ -2,8 +2,8 @@
  * inlined version of
  * https://github.com/facebook/fbjs/blob/master/packages/fbjs/src/core/hyphenateStyleName.js
  */
-const uppercasePattern = /([A-Z])/g
-const msPattern = /^ms-/
+const uppercasePattern = /([A-Z])/g;
+const msPattern = /^ms-/;
 
 /**
  * Hyphenates a camelcased CSS property name, for example:
@@ -21,11 +21,10 @@ const msPattern = /^ms-/
  * @param {string} string
  * @return {string}
  */
-const hyphenateStyleName = (string) =>
+export const hyphenateStyleName = (string) =>
   string
-    .replace(uppercasePattern, '-$1')
+    .replace(uppercasePattern, "-$1")
     .toLowerCase()
-    .replace(msPattern, '-ms-')
+    .replace(msPattern, "-ms-");
 
-
-export default hyphenateStyleName
+export default hyphenateStyleName;

@@ -1,7 +1,7 @@
 import * as React from "react";
 import hash from "./useStyles/hash.js";
-import hyphenate from "./useStyles/hyphenate.js";
-import withUnit from "./useStyles/withUnit.js";
+import hyphenate from "./hyphenate.js";
+import withUnit from "./withUnit.js";
 import cacheContext from "./useStyles/cacheContext.js";
 
 // TODO: other perf explorations:
@@ -98,8 +98,11 @@ const toCacheEntries = ({
 //   });
 // };
 
-// TODO: Psuedoclasses
+// For psuedoclasses support, and potentially other features that live at this layer?
+// TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
 const toCacheEntriesLayer2 = ({ stylesEntries, cache, resolveStyle }) => {
+  // TODO: probably not the most efficient thing in the world, can be reduced to
+  // single pass + flatten without intermediate grouping
   const { withPsuedoClass, withoutPsuedoClass } = stylesEntries.reduce(
     (groups, entry) => {
       const key = entry[0];

@@ -1,7 +1,7 @@
 // /* eslint-disable react/prop-types */
 // import styled from '@emotion/styled';
-import React from 'react';
-import { useStyles } from '../../../../src/index.js'
+import React from "react";
+import { useStyles } from "../../../../src/useStyles.js";
 
 // const StyledDot = styled.div(p => ({
 //   position: 'absolute',
@@ -23,24 +23,27 @@ import { useStyles } from '../../../../src/index.js'
 //   return <StyledDot {...props} style={{ borderBottomColor: color }} />;
 // }
 
-export default function Dot({ color, size, x, y}) {
-  const className = useStyles(({
-    "position": 'absolute',
-    "cursor": 'pointer',
-    "width": 0,
-    "height": 0,
-    "border-color": 'transparent',
-    "border-style": 'solid',
-    "border-top-width": 0,
-    "transform": 'translate(50%, 50%)',
-    "border-right-width": `${size / 2}px`,
-    "border-bottom-width": `${size / 2}px`,
-    "border-left-width": `${size / 2}px`,
-    "margin-left": `${x}px`,
-    "margin-top": `${y}px`,
-  }), [size, x, y])
+export default function Dot({ color, size, x, y }) {
+  const className = useStyles(
+    {
+      position: "absolute",
+      cursor: "pointer",
+      width: 0,
+      height: 0,
+      "border-color": "transparent",
+      "border-style": "solid",
+      "border-top-width": 0,
+      transform: "translate(50%, 50%)",
+      "border-right-width": `${size / 2}px`,
+      "border-bottom-width": `${size / 2}px`,
+      "border-left-width": `${size / 2}px`,
+      "margin-left": `${x}px`,
+      "margin-top": `${y}px`
+    },
+    [size, x, y]
+  );
 
   // console.log(className)
 
-  return <div className={className} style={{ borderBottomColor: color }} />
+  return <div className={className} style={{ borderBottomColor: color }} />;
 }

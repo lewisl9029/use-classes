@@ -1,7 +1,7 @@
 // /* eslint-disable react/prop-types */
 // import styled from '@emotion/styled';
 import React from "react";
-import { useStyles } from "../../../../src/index.js";
+import { useStyles } from "../../../../src/useStyles.js";
 
 // const StyledDot = styled.div(p => ({
 //   position: 'absolute',
