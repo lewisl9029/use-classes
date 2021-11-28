@@ -85,7 +85,7 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
   let cacheEntries = [];
   for (
     let stylesEntriesIndex = 0;
-    stylesEntriesIndex < length;
+    stylesEntriesIndex < stylesEntries.length;
     stylesEntriesIndex++
   ) {
     const [stylesEntryName, stylesEntryValue] =
@@ -95,7 +95,7 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
       const stylesEntriesWithPsuedoClass = Object.entries(stylesEntryValue);
       for (
         let stylesEntriesWithPsuedoClassIndex = 0;
-        stylesEntriesWithPsuedoClassIndex < length;
+        stylesEntriesWithPsuedoClassIndex < stylesEntriesWithPsuedoClass.length;
         stylesEntriesWithPsuedoClassIndex++
       ) {
         const [name, value] =
@@ -174,7 +174,7 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
   let cacheEntries = [];
   for (
     let stylesEntriesIndex = 0;
-    stylesEntriesIndex < length;
+    stylesEntriesIndex < stylesEntries.length;
     stylesEntriesIndex++
   ) {
     const stylesEntry = stylesEntries[stylesEntriesIndex];
@@ -185,7 +185,7 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
       const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
       for (
         let stylesEntriesWithMediaQueryIndex = 0;
-        stylesEntriesWithMediaQueryIndex < length;
+        stylesEntriesWithMediaQueryIndex < stylesEntriesWithMediaQuery.length;
         stylesEntriesWithMediaQueryIndex++
       ) {
         const stylesEntriesWithPsuedo =
