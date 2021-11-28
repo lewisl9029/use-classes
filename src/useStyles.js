@@ -28,77 +28,97 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = (list) => [].concat(...list);
 
-// TODO: see if separate cache ends up performing appreciably better due to fewer checks
-// const styleToCacheValue = ({
-//   style,
-//   pseudoClass,
-//   mediaQuery,
-//   cache,
-//   resolveStyle,
-//   appendRule,
-// }) => {
-//   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
-//   // Probably need to hoist up a level and then flatten
-//   const { name, value } = resolveStyle?.(style) ?? style;
-//   const existingCacheValue = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
+const cacheValuesToClassNames = (cacheValues) => {
+  let classNames = "";
+  for (let index = 0; index < cacheValues.length; index++) {
+    classNames += cacheValues[index].className + " ";
+  }
+  // Trailing space is intentional. Better DX when concatenating multiple calls.
+  return classNames;
+};
 
-//   if (existingCacheValue) {
-//     return existingCacheValue;
-//   }
-
-//   if (!cache[mediaQuery]) {
-//     cache[mediaQuery] = {};
-//   }
-//   if (!cache[mediaQuery][pseudoClass]) {
-//     cache[mediaQuery][pseudoClass] = {};
-//   }
-//   if (!cache[mediaQuery][pseudoClass][name]) {
-//     cache[mediaQuery][pseudoClass][name] = {};
-//   }
-
-//   // This ends up happening during render. That sounds unsafe, but is actually
-//   // perfectly fine in practice since these rules are content addressed and
-//   // don't affect styling until classNames update after render.
-//   return appendRule(
-//     (cache[mediaQuery][pseudoClass][name][value] = {
-//       // media query & psuedoclass need to be a part of id to allow distinct targetting
-//       className: `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
-//       pseudoClass,
-//       mediaQuery,
-//       name,
-//       value,
-//     })
-//   );
-// };
-
-const styleToCacheValue = ({ style, cache, resolveStyle, appendRule }) => {
+// TODO: splitting this into 3 will probably result in faster checks, but maintenance burden probably won't be worth
+const styleToCacheValue = ({
+  style,
+  pseudoClass,
+  mediaQuery,
+  cache,
+  resolveStyle,
+  appendRule,
+}) => {
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
   const { name, value } = resolveStyle?.(style) ?? style;
-  const existingCacheValue = cache[name]?.[value];
+
+  const existingCacheValue = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
 
   if (existingCacheValue) {
     return existingCacheValue;
   }
 
-  if (!cache[name]) {
-    cache[name] = {};
+  if (!cache[mediaQuery]) {
+    cache[mediaQuery] = {};
+  }
+  if (!cache[mediaQuery][pseudoClass]) {
+    cache[mediaQuery][pseudoClass] = {};
+  }
+  if (!cache[mediaQuery][pseudoClass][name]) {
+    cache[mediaQuery][pseudoClass][name] = {};
   }
 
   // This ends up happening during render. That sounds unsafe, but is actually
   // perfectly fine in practice since these rules are content addressed and
   // don't affect styling until classNames update after render.
   return appendRule(
-    (cache[name][value] = {
+    (cache[mediaQuery][pseudoClass][name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
-      className: `r_${hash(`${name}_${value}`)}`,
+      className: `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
+      // className: `r_${CSS.escape(
+      //   `${mediaQuery ?? '-'}_${pseudoClass ?? '-'}_${name}_${value}`,
+      // ).replaceAll(/\\./g, '_')}`,
+      pseudoClass,
+      mediaQuery,
       name,
       value,
     })
   );
 };
 
-const stylesToCacheValues = ({ styles, cache, resolveStyle, appendRule }) => {
+// const styleToCacheValue = ({ style, cache, resolveStyle, appendRule }) => {
+//   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
+//   // Probably need to hoist up a level and then flatten
+//   const { name, value } = resolveStyle?.(style) ?? style
+//   const existingCacheValue = cache[name]?.[value]
+
+//   if (existingCacheValue) {
+//     return existingCacheValue
+//   }
+
+//   if (!cache[name]) {
+//     cache[name] = {}
+//   }
+
+//   // This ends up happening during render. That sounds unsafe, but is actually
+//   // perfectly fine in practice since these rules are content addressed and
+//   // don't affect styling until classNames update after render.
+//   return appendRule(
+//     (cache[name][value] = {
+//       // media query & psuedoclass need to be a part of id to allow distinct targetting
+//       className: `r_${hash(`${name}_${value}`)}`,
+//       name,
+//       value,
+//     }),
+//   )
+// }
+
+const stylesToCacheValues = ({
+  styles,
+  pseudoClass,
+  mediaQuery,
+  cache,
+  resolveStyle,
+  appendRule,
+}) => {
   // Reuse styles entries array to avoid extra allocations.
   let cacheValues = Object.entries(styles);
 
@@ -107,6 +127,8 @@ const stylesToCacheValues = ({ styles, cache, resolveStyle, appendRule }) => {
 
     cacheValues[index] = styleToCacheValue({
       style: { name, value },
+      pseudoClass,
+      mediaQuery,
       cache,
       resolveStyle,
       appendRule,
@@ -116,44 +138,168 @@ const stylesToCacheValues = ({ styles, cache, resolveStyle, appendRule }) => {
   return cacheValues;
 };
 
+/**
+ * A low level building block to style React elements with great performance and
+ * minimal indirection. Can also be composed into custom styling hooks using a
+ * powerful style transform API.
+ *
+ * Call it with a CSS styles object and pass the result to a `className` prop.
+ *
+ * @param { import("./useStyles.types").Styles } styles
+ *
+ * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to useStyles can also be joined together with `+` thanks to the
+ * built-in trailing space.
+ */
+export const useStyles = (styles, { resolveStyle } = {}) => {
+  const cache = React.useContext(cacheContext);
+
+  // if (cache === undefined) {
+  //   throw new Error(
+  //     "Please ensure usages of useStyles are contained within StylesProvider"
+  //   );
+  // }
+
+  const cacheValues = cache.stylesToCacheValues(styles, {
+    resolveStyle,
+  });
+
+  // const cacheValues = measure("stylesToCacheValues", () =>
+  //   React.useMemo(
+  //     () => stylesToCacheValues(Object.entries(styles), { resolveStyle }),
+  //     [styles, resolveStyle]
+  //   )
+  // );
+
+  // const classNames = measure("classNames", () =>
+  //   React.useMemo(() => {
+  //     return cacheValuesToClassNames(cacheValues);
+  //   }, [cacheValues])
+  // );
+
+  return cacheValuesToClassNames(cacheValues);
+};
+
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
-const stylesEntriesToCacheValuesWithPseudoClass = ({
-  stylesEntries,
+const pseudoClassesToCacheValues = ({
+  pseudoClasses,
+  cache,
+  resolveStyle,
+  appendRule,
+}) => {
+  const pseudoClassesEntries = Object.entries(pseudoClasses);
+
+  let cacheValues = [];
+  for (
+    let pseudoClassesEntriesIndex = 0;
+    pseudoClassesEntriesIndex < pseudoClassesEntries.length;
+    pseudoClassesEntriesIndex++
+  ) {
+    const [pseudoClass, styles] =
+      pseudoClassesEntries[pseudoClassesEntriesIndex];
+
+    cacheValues.push(
+      ...stylesToCacheValues({
+        styles,
+        pseudoClass,
+        cache,
+        resolveStyle,
+        appendRule,
+      })
+    );
+  }
+
+  return cacheValues;
+};
+
+/**
+ * A low level building block to add pseudo classes to React elements with great
+ * performance and minimal indirection. Can also be composed into custom styling
+ * hooks using a powerful style transform API.
+ *
+ * Call it with an object with pseudo class names as keys and CSS styles objects
+ * as values, and pass the result to a `className` prop.
+ *
+ * @param { import("./useStyles.types").PseudoClasses } pseudoClasses
+ *
+ * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to usePseudoClasses can also be joined together with `+`
+ * thanks to the built-in trailing space.
+ */
+export const usePseudoClasses = (pseudoClasses, { resolveStyle } = {}) => {
+  const cache = React.useContext(cacheContext);
+
+  // if (cache === undefined) {
+  //   throw new Error(
+  //     "Please ensure usages of useStyles are contained within StylesProvider"
+  //   );
+  // }
+
+  const cacheValues = cache.pseudoClassesToCacheValues(pseudoClasses, {
+    resolveStyle,
+  });
+
+  // const cacheValues = measure("toCacheValues", () =>
+  //   React.useMemo(
+  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
+  //     [styles, resolveStyle]
+  //   )
+  // );
+
+  // const classNames = measure("classNames", () =>
+  //   React.useMemo(() => {
+  //     return cacheValuesToClassNames(cacheValues);
+  //   }, [cacheValues])
+  // );
+
+  return cacheValuesToClassNames(cacheValues);
+};
+
+const stylesOrPseudoClassesToCacheValues = ({
+  stylesOrPseudoClasses,
   mediaQuery,
   cache,
   resolveStyle,
   appendRule,
 }) => {
+  const stylesOrPseudoClassesEntries = Object.entries(stylesOrPseudoClasses);
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudoclasses or media queries are present, so
   // style & cache length are equal
-  let cacheValues = new Array(stylesEntries.length);
+  let cacheValues = new Array(stylesOrPseudoClassesEntries.length);
   let cacheValuesIndex = 0;
   // let cacheValues = [];
   for (
-    let stylesEntriesIndex = 0;
-    stylesEntriesIndex < stylesEntries.length;
-    stylesEntriesIndex++
+    let stylesOrPseudoClassesEntriesIndex = 0;
+    stylesOrPseudoClassesEntriesIndex < stylesOrPseudoClassesEntries.length;
+    stylesOrPseudoClassesEntriesIndex++
   ) {
-    const [stylesEntryName, stylesEntryValue] =
-      stylesEntries[stylesEntriesIndex];
+    const [entryName, entryValue] =
+      stylesOrPseudoClassesEntries[stylesOrPseudoClassesEntriesIndex];
 
-    // startsWith might actually be faster than stylesEntryName[0] here!
+    // startsWith might actually be faster than entryName[0] here!
     // https://stackoverflow.com/a/62093300
-    if (stylesEntryName.startsWith(":")) {
-      const stylesEntriesWithPsuedoClass = Object.entries(stylesEntryValue);
+    if (entryName.startsWith(":")) {
+      const stylesEntries = Object.entries(entryValue);
       for (
-        let stylesEntriesWithPsuedoClassIndex = 0;
-        stylesEntriesWithPsuedoClassIndex < stylesEntriesWithPsuedoClass.length;
-        stylesEntriesWithPsuedoClassIndex++
+        let stylesEntriesIndex = 0;
+        stylesEntriesIndex < stylesEntries.length;
+        stylesEntriesIndex++
       ) {
-        const [name, value] =
-          stylesEntriesWithPsuedoClass[stylesEntriesWithPsuedoClassIndex];
+        const [name, value] = stylesEntries[stylesEntriesIndex];
 
         cacheValues[cacheValuesIndex] = styleToCacheValue({
           style: { name, value },
-          pseudoClass: stylesEntryName,
+          pseudoClass: entryName,
           mediaQuery,
           cache,
           resolveStyle,
@@ -165,7 +311,7 @@ const stylesEntriesToCacheValuesWithPseudoClass = ({
     }
 
     cacheValues[cacheValuesIndex] = styleToCacheValue({
-      style: { name: stylesEntryName, value: stylesEntryValue },
+      style: { name: entryName, value: entryValue },
       mediaQuery,
       cache,
       resolveStyle,
@@ -175,77 +321,34 @@ const stylesEntriesToCacheValuesWithPseudoClass = ({
   }
 
   return cacheValues;
-
-  // return stylesEntries.reduce(
-  //   (stylesEntriesFlattened, [styleEntryName, styleEntryValue]) => {
-  //     if (styleEntryName[0] === ":") {
-  //       stylesEntriesFlattened.push(
-  //         ...Object.entries(value).map(([name, value]) =>
-  //           styleToCacheValue({
-  //             style: { name, value },
-  //             pseudoClass: styleEntryName,
-  //             mediaQuery,
-  //             cache,
-  //             resolveStyle,
-  //           })
-  //         )
-  //       );
-  //       return stylesEntriesFlattened;
-  //     }
-  //     stylesEntriesFlattened.push(
-  //       styleToCacheValue({
-  //         style: { name: styleEntryName, value: styleEntryValue },
-  //         mediaQuery,
-  //         cache,
-  //         resolveStyle,
-  //       })
-  //     );
-  //     return stylesEntriesFlattened;
-  //   },
-  //   []
-  // );
 };
 
 // For at rules, currently only @media.
 //
 // TODO: Many other at rules will need to be purpose built. For instance:
 // @keyframes names will become globally scoped, and has special structure
-const stylesEntriesToCacheValuesWithMediaQuery = ({
-  stylesEntries,
+const mediaQueriesToCacheValues = ({
+  mediaQueries,
   cache,
   resolveStyle,
   appendRule,
 }) => {
+  const mediaQueriesEntries = Object.entries(mediaQueries);
   let cacheValues = [];
   for (
-    let stylesEntriesIndex = 0;
-    stylesEntriesIndex < stylesEntries.length;
-    stylesEntriesIndex++
+    let mediaQueriesEntriesIndex = 0;
+    mediaQueriesEntriesIndex < mediaQueriesEntries.length;
+    mediaQueriesEntriesIndex++
   ) {
-    const stylesEntry = stylesEntries[stylesEntriesIndex];
-    const [stylesEntryName, stylesEntryValue] = stylesEntry;
+    const mediaQueriesEntry = mediaQueriesEntries[mediaQueriesEntriesIndex];
+    const [mediaQuery, stylesOrPseudoClasses] = mediaQueriesEntry;
 
-    // TODO: startsWith might not be the fastest way to check
-    if (stylesEntryName.startsWith("@media")) {
-      const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
-
-      // This is probably slower than directly pushing each result, but I really
-      // don't want to have to start sharing mutative counters
-      cacheValues.push(
-        ...stylesEntriesToCacheValuesWithPseudoClass({
-          stylesEntries: stylesEntriesWithMediaQuery,
-          mediaQuery: stylesEntryName,
-          cache,
-          resolveStyle,
-          appendRule,
-        })
-      );
-      continue;
-    }
-
+    // This is probably slower than directly pushing each result, but I really
+    // don't want to have to start sharing mutative counters
     cacheValues.push(
-      ...stylesEntriesToCacheValuesWithPseudoClass({
-        stylesEntries: [stylesEntry],
+      ...stylesOrPseudoClassesToCacheValues({
+        stylesOrPseudoClasses,
+        mediaQuery,
         cache,
         resolveStyle,
         appendRule,
@@ -254,31 +357,54 @@ const stylesEntriesToCacheValuesWithMediaQuery = ({
   }
 
   return cacheValues;
+};
 
-  // return stylesEntries.reduce((stylesEntriesFlattened, styleEntry) => {
-  //   const [styleEntryName, styleEntryValue] = styleEntry;
-  //   if (styleEntryName.startsWith("@media")) {
-  //     stylesEntriesFlattened.push(
-  //       ...Object.entries(value).map((stylesEntriesWithPsuedo) =>
-  //         stylesEntriesToCacheValuesWithPseudoClass({
-  //           stylesEntries: stylesEntriesWithPsuedo,
-  //           mediaQuery: styleEntryName,
-  //           cache,
-  //           resolveStyle,
-  //         })
-  //       )
-  //     );
-  //     return stylesEntriesFlattened;
-  //   }
-  //   stylesEntriesFlattened.push(
-  //     ...stylesEntriesToCacheValuesWithPseudoClass({
-  //       stylesEntries: [styleEntry],
-  //       cache,
-  //       resolveStyle,
-  //     })
+/**
+ * A low level building block to add media queries to React elements with great
+ * performance and minimal indirection. Can also be composed into custom styling
+ * hooks using a powerful style transform API.
+ *
+ * Call it with an object with media query strings as keys and CSS styles objects
+ * as values, and pass the result to a `className` prop. Pseudoclasses can be
+ * nested within as well.
+ *
+ * @param { import("./useStyles.types").MediaQueries } mediaQueries
+ *
+ * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to useMediaQueries can also be joined together with `+`
+ * thanks to the built-in trailing space.
+ */
+export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
+  const cache = React.useContext(cacheContext);
+
+  // if (cache === undefined) {
+  //   throw new Error(
+  //     "Please ensure usages of useStyles are contained within StylesProvider"
   //   );
-  //   return stylesEntriesFlattened;
-  // }, []);
+  // }
+
+  const cacheValues = cache.mediaQueriesToCacheValues(mediaQueries, {
+    resolveStyle,
+  });
+
+  // const cacheValues = measure("toCacheValues", () =>
+  //   React.useMemo(
+  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
+  //     [styles, resolveStyle]
+  //   )
+  // );
+
+  // const classNames = measure("classNames", () =>
+  //   React.useMemo(() => {
+  //     return cacheValuesToClassNames(cacheValues);
+  //   }, [cacheValues])
+  // );
+
+  return cacheValuesToClassNames(cacheValues);
 };
 
 export const StylesProvider = ({
@@ -287,8 +413,8 @@ export const StylesProvider = ({
   initialCache = defaultCache,
 }) => {
   const stylesheetRef = React.useRef();
-  const useCssTypedOm = !!(
-    options.useCssTypedOm &&
+  const experimental__useCssTypedOm = !!(
+    options.experimental__useCssTypedOm &&
     window.CSS &&
     window.CSS.number
   );
@@ -335,7 +461,7 @@ export const StylesProvider = ({
         insertStylesheet();
       }
 
-      if (useCssTypedOm) {
+      if (experimental__useCssTypedOm) {
         // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
         // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
         const rule = `.${className}${pseudoClass} {}`;
@@ -355,7 +481,7 @@ export const StylesProvider = ({
       }
       return cacheValue;
     },
-    [insertStylesheet, useCssTypedOm]
+    [insertStylesheet, experimental__useCssTypedOm]
   );
 
   return React.createElement(
@@ -363,7 +489,7 @@ export const StylesProvider = ({
     cacheContext.Provider,
     {
       value: {
-        toCacheValues: React.useCallback(
+        stylesToCacheValues: React.useCallback(
           (styles, { resolveStyle }) =>
             stylesToCacheValues({
               styles,
@@ -373,63 +499,29 @@ export const StylesProvider = ({
             }),
           [appendRule]
         ),
-        useCssTypedOm,
+        pseudoClassesToCacheValues: React.useCallback(
+          (pseudoClasses, { resolveStyle }) =>
+            pseudoClassesToCacheValues({
+              pseudoClasses,
+              cache: initialCache,
+              resolveStyle,
+              appendRule,
+            }),
+          [appendRule]
+        ),
+        mediaQueriesToCacheValues: React.useCallback(
+          (mediaQueries, { resolveStyle }) =>
+            mediaQueriesToCacheValues({
+              mediaQueries,
+              cache: initialCache,
+              resolveStyle,
+              appendRule,
+            }),
+          [appendRule]
+        ),
+        experimental__useCssTypedOm,
       },
     },
     children
   );
-};
-
-/**
- * A low level building block to style React elements with great performance and
- * minimal indirection. Can also be composed into custom styling hooks using a
- * powerful style transform API.
- *
- * Call it with a CSS styles object and pass the result to a `className` prop.
- *
- * @param { import("./useStyles.types").StylesWithMediaQuery } styles
- *
- * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
- *
- * @returns { string } A string with space separated css class names that can be
- * passed as-is into a className prop.
- *
- * Multiple calls to useStyles can also be joined together with `+`.
- */
-export const useStyles = (styles, { resolveStyle } = {}) => {
-  const cache = React.useContext(cacheContext);
-
-  // if (cache === undefined) {
-  //   throw new Error(
-  //     "Please ensure usages of useStyles are contained within StylesProvider"
-  //   );
-  // }
-
-  const cacheValues = cache.toCacheValues(styles, {
-    resolveStyle,
-  });
-
-  // const cacheValues = measure("toCacheValues", () =>
-  //   React.useMemo(
-  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  let classNames = "";
-  for (let index = 0; index < cacheValues.length; index++) {
-    classNames += cacheValues[index].className + " ";
-  }
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     let classNames = "";
-  //     for (let index = 0; index < cacheValues.length; index++) {
-  //       classNames += cacheValues[index].className + " ";
-  //     }
-
-  //     return classNames;
-  //   }, [cacheValues])
-  // );
-
-  return classNames;
 };

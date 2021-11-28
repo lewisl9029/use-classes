@@ -4,7 +4,7 @@ import View from "./View";
 
 export default function Provider({ children }) {
   return (
-    <StylesProvider options={{ useCssTypedOm: true }}>
+    <StylesProvider options={{ experimental__useCssTypedOm: true }}>
       <View>{children}</View>
     </StylesProvider>
   );
