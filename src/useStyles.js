@@ -28,49 +28,77 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = (list) => [].concat(...list);
 
-const styleToCacheValue = ({
-  style,
-  pseudoClass,
-  mediaQuery,
-  cache,
-  resolveStyle,
-  insertRule,
-}) => {
+// TODO: see if separate cache ends up performing appreciably better due to fewer checks
+// const styleToCacheValue = ({
+//   style,
+//   pseudoClass,
+//   mediaQuery,
+//   cache,
+//   resolveStyle,
+//   appendRule,
+// }) => {
+//   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
+//   // Probably need to hoist up a level and then flatten
+//   const { name, value } = resolveStyle?.(style) ?? style;
+//   const existingCacheValue = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
+
+//   if (existingCacheValue) {
+//     return existingCacheValue;
+//   }
+
+//   if (!cache[mediaQuery]) {
+//     cache[mediaQuery] = {};
+//   }
+//   if (!cache[mediaQuery][pseudoClass]) {
+//     cache[mediaQuery][pseudoClass] = {};
+//   }
+//   if (!cache[mediaQuery][pseudoClass][name]) {
+//     cache[mediaQuery][pseudoClass][name] = {};
+//   }
+
+//   // This ends up happening during render. That sounds unsafe, but is actually
+//   // perfectly fine in practice since these rules are content addressed and
+//   // don't affect styling until classNames update after render.
+//   return appendRule(
+//     (cache[mediaQuery][pseudoClass][name][value] = {
+//       // media query & psuedoclass need to be a part of id to allow distinct targetting
+//       className: `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
+//       pseudoClass,
+//       mediaQuery,
+//       name,
+//       value,
+//     })
+//   );
+// };
+
+const styleToCacheValue = ({ style, cache, resolveStyle, appendRule }) => {
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
   const { name, value } = resolveStyle?.(style) ?? style;
-  const existingCacheValue = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
+  const existingCacheValue = cache[name]?.[value];
 
   if (existingCacheValue) {
     return existingCacheValue;
   }
 
-  if (!cache[mediaQuery]) {
-    cache[mediaQuery] = {};
-  }
-  if (!cache[mediaQuery][pseudoClass]) {
-    cache[mediaQuery][pseudoClass] = {};
-  }
-  if (!cache[mediaQuery][pseudoClass][name]) {
-    cache[mediaQuery][pseudoClass][name] = {};
+  if (!cache[name]) {
+    cache[name] = {};
   }
 
   // This ends up happening during render. That sounds unsafe, but is actually
   // perfectly fine in practice since these rules are content addressed and
   // don't affect styling until classNames update after render.
-  return insertRule(
-    (cache[mediaQuery][pseudoClass][name][value] = {
+  return appendRule(
+    (cache[name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
-      className: `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
-      pseudoClass,
-      mediaQuery,
+      className: `r_${hash(`${name}_${value}`)}`,
       name,
       value,
     })
   );
 };
 
-const stylesToCacheValues = ({ styles, cache, resolveStyle, insertRule }) => {
+const stylesToCacheValues = ({ styles, cache, resolveStyle, appendRule }) => {
   // Reuse styles entries array to avoid extra allocations.
   let cacheValues = Object.entries(styles);
 
@@ -81,7 +109,7 @@ const stylesToCacheValues = ({ styles, cache, resolveStyle, insertRule }) => {
       style: { name, value },
       cache,
       resolveStyle,
-      insertRule,
+      appendRule,
     });
   }
 
@@ -95,7 +123,7 @@ const stylesEntriesToCacheValuesWithPseudoClass = ({
   mediaQuery,
   cache,
   resolveStyle,
-  insertRule,
+  appendRule,
 }) => {
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudoclasses or media queries are present, so
@@ -129,7 +157,7 @@ const stylesEntriesToCacheValuesWithPseudoClass = ({
           mediaQuery,
           cache,
           resolveStyle,
-          insertRule,
+          appendRule,
         });
         cacheValuesIndex++;
       }
@@ -141,7 +169,7 @@ const stylesEntriesToCacheValuesWithPseudoClass = ({
       mediaQuery,
       cache,
       resolveStyle,
-      insertRule,
+      appendRule,
     });
     cacheValuesIndex++;
   }
@@ -186,7 +214,7 @@ const stylesEntriesToCacheValuesWithMediaQuery = ({
   stylesEntries,
   cache,
   resolveStyle,
-  insertRule,
+  appendRule,
 }) => {
   let cacheValues = [];
   for (
@@ -209,7 +237,7 @@ const stylesEntriesToCacheValuesWithMediaQuery = ({
           mediaQuery: stylesEntryName,
           cache,
           resolveStyle,
-          insertRule,
+          appendRule,
         })
       );
       continue;
@@ -220,7 +248,7 @@ const stylesEntriesToCacheValuesWithMediaQuery = ({
         stylesEntries: [stylesEntry],
         cache,
         resolveStyle,
-        insertRule,
+        appendRule,
       })
     );
   }
@@ -294,7 +322,7 @@ export const StylesProvider = ({
     // }
   }, [insertStylesheet]);
 
-  const insertRule = React.useCallback(
+  const appendRule = React.useCallback(
     (cacheValue) => {
       const {
         className,
@@ -341,9 +369,9 @@ export const StylesProvider = ({
               styles,
               cache: initialCache,
               resolveStyle,
-              insertRule,
+              appendRule,
             }),
-          [insertRule]
+          [appendRule]
         ),
         useCssTypedOm,
       },
