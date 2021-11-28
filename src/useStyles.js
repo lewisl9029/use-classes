@@ -7,7 +7,6 @@ import cacheContext from "./useStyles/cacheContext.js";
 //   - More low-level caching and memoization
 
 const defaultCache = {};
-const defaultInsertedRules = new Set();
 
 // const measure = (name, fn) => {
 //   window.performance.mark(`${name}_start`)
@@ -79,9 +78,9 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudoclasses or media queries are present, so
   // style & cache length are equal
-  // let cacheEntries = new Array(length);
-  // let cacheEntriesIndex = 0;
-  let cacheEntries = [];
+  let cacheEntries = new Array(stylesEntries.length);
+  let cacheEntriesIndex = 0;
+  // let cacheEntries = [];
   for (
     let stylesEntriesIndex = 0;
     stylesEntriesIndex < stylesEntries.length;
@@ -100,29 +99,27 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
         const [name, value] =
           stylesEntriesWithPsuedoClass[stylesEntriesWithPsuedoClassIndex];
 
-        cacheEntries.push(
-          styleToCacheEntry({
-            style: { name, value },
-            pseudoClass: stylesEntryName,
-            mediaQuery,
-            cache,
-            resolveStyle,
-            insertRule,
-          })
-        );
+        cacheEntries[cacheEntriesIndex] = styleToCacheEntry({
+          style: { name, value },
+          pseudoClass: stylesEntryName,
+          mediaQuery,
+          cache,
+          resolveStyle,
+          insertRule,
+        });
+        cacheEntriesIndex++;
       }
       continue;
     }
 
-    cacheEntries.push(
-      styleToCacheEntry({
-        style: { name: stylesEntryName, value: stylesEntryValue },
-        mediaQuery,
-        cache,
-        resolveStyle,
-        insertRule,
-      })
-    );
+    cacheEntries[cacheEntriesIndex] = styleToCacheEntry({
+      style: { name: stylesEntryName, value: stylesEntryValue },
+      mediaQuery,
+      cache,
+      resolveStyle,
+      insertRule,
+    });
+    cacheEntriesIndex++;
   }
 
   return cacheEntries;
@@ -167,11 +164,6 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
   resolveStyle,
   insertRule,
 }) => {
-  // preallocate the array for original size of style entries to optimize for
-  // most common case where no pseudoclasses or media queries are present, so
-  // style & cache length are equal
-  // let cacheEntries = new Array(length);
-  // let cacheEntriesIndex = 0;
   let cacheEntries = [];
   for (
     let stylesEntriesIndex = 0;
