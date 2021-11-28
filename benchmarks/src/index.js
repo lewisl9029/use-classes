@@ -47,7 +47,7 @@ const tests = {
       wrap: 1
     }),
     Provider: components.Provider,
-    sampleCount: 10
+    sampleCount: 30
   })),
   "Mount wide tree": createTestBlock(components => ({
     benchmarkType: "mount",
@@ -60,7 +60,7 @@ const tests = {
       wrap: 2
     }),
     Provider: components.Provider,
-    sampleCount: 10
+    sampleCount: 30
   })),
   "Update dynamic styles": createTestBlock(components => ({
     benchmarkType: "update",
@@ -69,7 +69,7 @@ const tests = {
       return { components, s: 200, renderCount: cycle, x: 0, y: 0 };
     },
     Provider: components.Provider,
-    sampleCount: 30
+    sampleCount: 90
   }))
 };
 
