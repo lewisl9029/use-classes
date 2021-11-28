@@ -3,7 +3,6 @@ import hash from "./useStyles/hash.js";
 import cacheContext from "./useStyles/cacheContext.js";
 
 // TODO: other perf explorations:
-//   - Replace array methods with manually optimized for loops
 //   - Preallocate array size where feasible
 //   - More low-level caching and memoization
 
@@ -30,162 +29,215 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = (list) => [].concat(...list);
 
-const toCacheEntries = ({
-  stylesEntries,
+const styleToCacheEntry = ({
+  style,
   pseudoClass,
   mediaQuery,
   cache,
   resolveStyle,
 }) => {
-  return stylesEntries.map(([rawName, rawValue]) => {
-    const style = { name: rawName, value: rawValue };
-    const { name, value } = resolveStyle?.(style) ?? style;
-    const existingCacheEntry =
-      cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
+  // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
+  // Probably need to hoist up a level and then flatten
+  const { name, value } = resolveStyle?.(style) ?? style;
+  const existingCacheEntry = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
 
-    if (existingCacheEntry) {
-      return existingCacheEntry;
-    }
+  if (existingCacheEntry) {
+    return existingCacheEntry;
+  }
 
-    // psuedoclass need to be a part of id to allow distinct targetting
-    const id = `${mediaQuery}_${pseudoClass}_${name}_${value}`;
-    // console.log('uncached rule: ' + id)
+  // psuedoclass need to be a part of id to allow distinct targetting
+  const id = `${mediaQuery}_${pseudoClass}_${name}_${value}`;
+  // console.log('uncached rule: ' + id)
 
-    const className = `r_${hash(id)}`;
+  const className = `r_${hash(id)}`;
 
-    if (!cache[mediaQuery]) {
-      cache[mediaQuery] = {};
-    }
-    if (!cache[mediaQuery][pseudoClass]) {
-      cache[mediaQuery][pseudoClass] = {};
-    }
-    if (!cache[mediaQuery][pseudoClass][name]) {
-      cache[mediaQuery][pseudoClass][name] = {};
-    }
+  if (!cache[mediaQuery]) {
+    cache[mediaQuery] = {};
+  }
+  if (!cache[mediaQuery][pseudoClass]) {
+    cache[mediaQuery][pseudoClass] = {};
+  }
+  if (!cache[mediaQuery][pseudoClass][name]) {
+    cache[mediaQuery][pseudoClass][name] = {};
+  }
 
-    const cacheEntry = { id, className, pseudoClass, mediaQuery, name, value };
+  const cacheEntry = { id, className, pseudoClass, mediaQuery, name, value };
 
-    cache[mediaQuery][pseudoClass][name][value] = cacheEntry;
+  cache[mediaQuery][pseudoClass][name][value] = cacheEntry;
 
-    return cacheEntry;
-  });
+  return cacheEntry;
 };
-
-// Alternative version with 1d cache, benchmarks much slower
-// const toCacheEntries = ({
-//   stylesEntries,
-//   pseudoClass,
-//   cache,
-//   resolveStyle,
-// }) => {
-//   return stylesEntries.map(([rawName, rawValue]) => {
-//     const style = { name: rawName, value: rawValue };
-//     const { name, value } = resolveStyle?.(style) ?? style;
-//     // psuedoclass need to be a part of id to allow distinct targetting
-//     const id = `${pseudoClass}_${name}_${value}`;
-//     const existingCacheEntry = cache[id];
-
-//     if (existingCacheEntry) {
-//       return existingCacheEntry;
-//     }
-
-//     // // console.log('uncached rule: ' + id)
-
-//     const className = `r_${hash(id)}`;
-
-//     const cacheEntry = { id, className, pseudoClass, name, value };
-
-//     cache[id] = cacheEntry;
-
-//     return cacheEntry;
-//   });
-// };
 
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
-const toCacheEntriesWithPseudo = ({
+const stylesEntriesToCacheEntriesWithPseudoClass = ({
   stylesEntries,
   mediaQuery,
   cache,
   resolveStyle,
 }) => {
-  // TODO: probably not the most efficient thing in the world, can be reduced to
-  // single pass + flatten without intermediate grouping
-  const { withPseudoClass, withoutPseudoClass } = stylesEntries.reduce(
-    (groups, entry) => {
-      const key = entry[0];
-      if (key[0] === ":") {
-        groups.withPseudoClass.push(entry);
-      } else {
-        groups.withoutPseudoClass.push(entry);
-      }
-      return groups;
-    },
-    { withPseudoClass: [], withoutPseudoClass: [] }
-  );
+  const length = stylesEntries.length;
+  // preallocate the array for original size of style entries to optimize for
+  // most common case where no pseudoclasses or media queries are present, so
+  // style & cache length are equal
+  // let cacheEntries = new Array(length);
+  // let cacheEntriesIndex = 0;
+  let cacheEntries = [];
+  for (
+    let stylesEntriesIndex = 0;
+    stylesEntriesIndex < length;
+    stylesEntriesIndex++
+  ) {
+    const [stylesEntryName, stylesEntryValue] =
+      stylesEntries[stylesEntriesIndex];
 
-  return [
-    ...toCacheEntries({
-      stylesEntries: withoutPseudoClass,
-      mediaQuery,
-      cache,
-      resolveStyle,
-    }),
-    ...flatten(
-      withPseudoClass.map(([pseudoClass, styles]) =>
-        toCacheEntries({
-          stylesEntries: Object.entries(styles),
-          mediaQuery,
-          pseudoClass,
-          cache,
-          resolveStyle,
-        })
-      )
-    ),
-  ];
+    if (stylesEntryName[0] === ":") {
+      const stylesEntriesWithPsuedoClass = Object.entries(stylesEntryValue);
+      for (
+        let stylesEntriesWithPsuedoClassIndex = 0;
+        stylesEntriesWithPsuedoClassIndex < length;
+        stylesEntriesWithPsuedoClassIndex++
+      ) {
+        const [name, value] =
+          stylesEntriesWithPsuedoClass[stylesEntriesWithPsuedoClassIndex];
+
+        cacheEntries.push(
+          styleToCacheEntry({
+            style: { name, value },
+            pseudoClass: stylesEntryName,
+            mediaQuery,
+            cache,
+            resolveStyle,
+          })
+        );
+      }
+      continue;
+    }
+
+    cacheEntries.push(
+      styleToCacheEntry({
+        style: { name: stylesEntryName, value: stylesEntryValue },
+        mediaQuery,
+        cache,
+        resolveStyle,
+      })
+    );
+  }
+
+  return cacheEntries;
+
+  // return stylesEntries.reduce(
+  //   (stylesEntriesFlattened, [styleEntryName, styleEntryValue]) => {
+  //     if (styleEntryName[0] === ":") {
+  //       stylesEntriesFlattened.push(
+  //         ...Object.entries(value).map(([name, value]) =>
+  //           styleToCacheEntry({
+  //             style: { name, value },
+  //             pseudoClass: styleEntryName,
+  //             mediaQuery,
+  //             cache,
+  //             resolveStyle,
+  //           })
+  //         )
+  //       );
+  //       return stylesEntriesFlattened;
+  //     }
+  //     stylesEntriesFlattened.push(
+  //       styleToCacheEntry({
+  //         style: { name: styleEntryName, value: styleEntryValue },
+  //         mediaQuery,
+  //         cache,
+  //         resolveStyle,
+  //       })
+  //     );
+  //     return stylesEntriesFlattened;
+  //   },
+  //   []
+  // );
 };
 
 // For at rules, currently only @media.
 //
 // TODO: Many other at rules will need to be purpose built. For instance:
 // @keyframes names will become globally scoped, and has special structure
-const toCacheEntriesWithMediaQuery = ({
+const stylesEntriesToCacheEntriesWithMediaQuery = ({
   stylesEntries,
   cache,
   resolveStyle,
 }) => {
-  // TODO: probably not the most efficient thing in the world, can be reduced to
-  // single pass + flatten without intermediate grouping
-  const { withMediaQuery, withoutMediaQuery } = stylesEntries.reduce(
-    (groups, entry) => {
-      const key = entry[0];
-      if (key.startsWith("@media")) {
-        groups.withMediaQuery.push(entry);
-      } else {
-        groups.withoutMediaQuery.push(entry);
-      }
-      return groups;
-    },
-    { withMediaQuery: [], withoutMediaQuery: [] }
-  );
+  const length = stylesEntries.length;
+  // preallocate the array for original size of style entries to optimize for
+  // most common case where no pseudoclasses or media queries are present, so
+  // style & cache length are equal
+  // let cacheEntries = new Array(length);
+  // let cacheEntriesIndex = 0;
+  let cacheEntries = [];
+  for (
+    let stylesEntriesIndex = 0;
+    stylesEntriesIndex < length;
+    stylesEntriesIndex++
+  ) {
+    const stylesEntry = stylesEntries[stylesEntriesIndex];
+    const [stylesEntryName, stylesEntryValue] = stylesEntry;
 
-  return [
-    ...toCacheEntriesWithPseudo({
-      stylesEntries: withoutMediaQuery,
-      cache,
-      resolveStyle,
-    }),
-    ...flatten(
-      withMediaQuery.map(([mediaQuery, styles]) =>
-        toCacheEntriesWithPseudo({
-          stylesEntries: Object.entries(styles),
-          mediaQuery,
-          cache,
-          resolveStyle,
-        })
-      )
-    ),
-  ];
+    // TODO: startsWith might not be the fastest way to check
+    if (stylesEntryName.startsWith("@media")) {
+      const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
+      for (
+        let stylesEntriesWithMediaQueryIndex = 0;
+        stylesEntriesWithMediaQueryIndex < length;
+        stylesEntriesWithMediaQueryIndex++
+      ) {
+        const stylesEntriesWithPsuedo =
+          stylesEntriesWithMediaQuery[stylesEntriesWithMediaQueryIndex];
+
+        cacheEntries.push(
+          ...stylesEntriesToCacheEntriesWithPseudoClass({
+            stylesEntries: stylesEntriesWithPsuedo,
+            mediaQuery: stylesEntryName,
+            cache,
+            resolveStyle,
+          })
+        );
+      }
+      continue;
+    }
+
+    cacheEntries.push(
+      ...stylesEntriesToCacheEntriesWithPseudoClass({
+        stylesEntries: [stylesEntry],
+        cache,
+        resolveStyle,
+      })
+    );
+  }
+
+  return cacheEntries;
+
+  // return stylesEntries.reduce((stylesEntriesFlattened, styleEntry) => {
+  //   const [styleEntryName, styleEntryValue] = styleEntry;
+  //   if (styleEntryName.startsWith("@media")) {
+  //     stylesEntriesFlattened.push(
+  //       ...Object.entries(value).map((stylesEntriesWithPsuedo) =>
+  //         stylesEntriesToCacheEntriesWithPseudoClass({
+  //           stylesEntries: stylesEntriesWithPsuedo,
+  //           mediaQuery: styleEntryName,
+  //           cache,
+  //           resolveStyle,
+  //         })
+  //       )
+  //     );
+  //     return stylesEntriesFlattened;
+  //   }
+  //   stylesEntriesFlattened.push(
+  //     ...stylesEntriesToCacheEntriesWithPseudoClass({
+  //       stylesEntries: [styleEntry],
+  //       cache,
+  //       resolveStyle,
+  //     })
+  //   );
+  //   return stylesEntriesFlattened;
+  // }, []);
 };
 
 export const StylesProvider = ({
@@ -266,7 +318,7 @@ export const StylesProvider = ({
         ),
         toCacheEntries: React.useCallback(
           (stylesEntries, { resolveStyle }) =>
-            toCacheEntriesWithMediaQuery({
+            stylesEntriesToCacheEntriesWithMediaQuery({
               stylesEntries,
               cache: initialCache,
               resolveStyle,
@@ -311,8 +363,8 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
 
   // const cacheEntries = measure("toCacheEntries", () =>
   //   React.useMemo(
-  //     () => toCacheEntries(stylesEntries, { resolveStyle }),
-  //     [stylesEntries, resolveStyle]
+  //     () => toCacheEntries(Object.entries(styles), { resolveStyle }),
+  //     [styles, resolveStyle]
   //   )
   // );
 
@@ -322,9 +374,8 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
   }
   // const classNames = measure("classNames", () =>
   //   React.useMemo(() => {
-  //     const length = cacheEntries.length;
   //     let classNames = "";
-  //     for (let index = 0; index < length; index++) {
+  //     for (let index = 0; index < cacheEntries.length; index++) {
   //       classNames += cacheEntries[index].className + " ";
   //     }
 
@@ -336,16 +387,15 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
     // measure("insert", () => {
     //   cacheEntries.forEach(insertRule);
     // });
-    const length = cacheEntries.length;
     // Insert in reverse order to enable later mediaQuerys to override earlier
     // styles due to insertRules defaulting to inserting at index 0:
     // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/insertRule
     //
     // Should be more performant than calling .reverse(), or reading
     // cssRules.length and inserting last, also non-mutative.
-    cacheEntries.forEach((_cacheEntry, index) =>
-      insertRule(cacheEntries[length - 1 - index])
-    );
+    for (let index = cacheEntries.length - 1; index >= 0; index--) {
+      insertRule(cacheEntries[index]);
+    }
 
     return () => {
       // This is not necessary, and hinders performance
