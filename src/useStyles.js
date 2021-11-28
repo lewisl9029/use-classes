@@ -177,8 +177,7 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
     const stylesEntry = stylesEntries[stylesEntriesIndex];
     const [stylesEntryName, stylesEntryValue] = stylesEntry;
 
-    // TODO: startsWith might not be the fastest way to check
-    if (stylesEntryName.startsWith("@media")) {
+    if (stylesEntryName.slice(0, 6) === "@media") {
       const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
 
       cacheEntries.push(
