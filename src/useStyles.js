@@ -35,6 +35,7 @@ const styleToCacheEntry = ({
   mediaQuery,
   cache,
   resolveStyle,
+  insertRule,
 }) => {
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
@@ -45,12 +46,6 @@ const styleToCacheEntry = ({
     return existingCacheEntry;
   }
 
-  // psuedoclass need to be a part of id to allow distinct targetting
-  const id = `${mediaQuery}_${pseudoClass}_${name}_${value}`;
-  // console.log('uncached rule: ' + id)
-
-  const className = `r_${hash(id)}`;
-
   if (!cache[mediaQuery]) {
     cache[mediaQuery] = {};
   }
@@ -60,12 +55,16 @@ const styleToCacheEntry = ({
   if (!cache[mediaQuery][pseudoClass][name]) {
     cache[mediaQuery][pseudoClass][name] = {};
   }
-
-  const cacheEntry = { id, className, pseudoClass, mediaQuery, name, value };
-
-  cache[mediaQuery][pseudoClass][name][value] = cacheEntry;
-
-  return cacheEntry;
+  return insertRule(
+    (cache[mediaQuery][pseudoClass][name][value] = {
+      // media query & psuedoclass need to be a part of id to allow distinct targetting
+      className: `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
+      pseudoClass,
+      mediaQuery,
+      name,
+      value,
+    })
+  );
 };
 
 // For psuedoclasses support, and potentially other features that live at this layer?
@@ -75,8 +74,8 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
   mediaQuery,
   cache,
   resolveStyle,
+  insertRule,
 }) => {
-  const length = stylesEntries.length;
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudoclasses or media queries are present, so
   // style & cache length are equal
@@ -108,6 +107,7 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
             mediaQuery,
             cache,
             resolveStyle,
+            insertRule,
           })
         );
       }
@@ -120,6 +120,7 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
         mediaQuery,
         cache,
         resolveStyle,
+        insertRule,
       })
     );
   }
@@ -164,8 +165,8 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
   stylesEntries,
   cache,
   resolveStyle,
+  insertRule,
 }) => {
-  const length = stylesEntries.length;
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudoclasses or media queries are present, so
   // style & cache length are equal
@@ -197,6 +198,7 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
             mediaQuery: stylesEntryName,
             cache,
             resolveStyle,
+            insertRule,
           })
         );
       }
@@ -208,6 +210,7 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
         stylesEntries: [stylesEntry],
         cache,
         resolveStyle,
+        insertRule,
       })
     );
   }
@@ -281,49 +284,52 @@ export const StylesProvider = ({
     // }
   }, [insertStylesheet]);
 
+  const insertRule = React.useCallback(
+    (cacheEntry) => {
+      const {
+        className,
+        pseudoClass = "",
+        mediaQuery,
+        name,
+        value,
+      } = cacheEntry;
+      if (!stylesheetRef.current) {
+        insertStylesheet();
+      }
+
+      if (useCssTypedOm) {
+        // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
+        // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
+        const rule = `.${className}${pseudoClass} {}`;
+        const index = stylesheetRef.current.insertRule(
+          mediaQuery ? `${mediaQuery} {${rule}}` : rule
+        );
+        stylesheetRef.current.cssRules[index].styleMap.set(name, value);
+      } else {
+        const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
+        stylesheetRef.current.insertRule(
+          mediaQuery ? `${mediaQuery} {${rule}}` : rule
+        );
+      }
+      return cacheEntry;
+    },
+    [insertStylesheet, useCssTypedOm]
+  );
+
   return React.createElement(
     // TODO: split contexts
     cacheContext.Provider,
     {
       value: {
-        insertRule: React.useCallback(
-          ({ id, className, pseudoClass = "", mediaQuery, name, value }) => {
-            if (!stylesheetRef.current) {
-              insertStylesheet();
-            }
-
-            if (defaultInsertedRules.has(id)) {
-              // console.log('cached rule', rule)
-              return;
-            }
-
-            if (useCssTypedOm) {
-              // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
-              // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
-              const rule = `.${className}${pseudoClass} {}`;
-              const index = stylesheetRef.current.insertRule(
-                mediaQuery ? `${mediaQuery} {${rule}}` : rule
-              );
-              stylesheetRef.current.cssRules[index].styleMap.set(name, value);
-            } else {
-              const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
-              stylesheetRef.current.insertRule(
-                mediaQuery ? `${mediaQuery} {${rule}}` : rule
-              );
-            }
-            // mutative cache for perf
-            defaultInsertedRules.add(id);
-          },
-          [insertStylesheet, useCssTypedOm]
-        ),
         toCacheEntries: React.useCallback(
           (stylesEntries, { resolveStyle }) =>
             stylesEntriesToCacheEntriesWithMediaQuery({
               stylesEntries,
               cache: initialCache,
               resolveStyle,
+              insertRule,
             }),
-          []
+          [insertRule]
         ),
         useCssTypedOm,
       },
@@ -357,9 +363,9 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
   //   );
   // }
 
-  const { insertRule, toCacheEntries } = cache;
-
-  const cacheEntries = toCacheEntries(Object.entries(styles), { resolveStyle });
+  const cacheEntries = cache.toCacheEntries(Object.entries(styles), {
+    resolveStyle,
+  });
 
   // const cacheEntries = measure("toCacheEntries", () =>
   //   React.useMemo(
@@ -383,27 +389,26 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
   //   }, [cacheEntries])
   // );
 
-  React.useLayoutEffect(() => {
-    // measure("insert", () => {
-    //   cacheEntries.forEach(insertRule);
-    // });
-    // Insert in reverse order to enable later mediaQuerys to override earlier
-    // styles due to insertRules defaulting to inserting at index 0:
-    // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/insertRule
-    //
-    // Should be more performant than calling .reverse(), or reading
-    // cssRules.length and inserting last, also non-mutative.
-    for (let index = cacheEntries.length - 1; index >= 0; index--) {
-      insertRule(cacheEntries[index]);
-    }
+  // React.useLayoutEffect(() => {
+  //   // measure("insert", () => {
+  //   //   cacheEntries.forEach(insertRule);
+  //   // });
+  //   // Insert in reverse order to enable later mediaQuerys to override earlier
+  //   // styles due to insertRules defaulting to inserting at index 0:
+  //   // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/insertRule
+  //   //
+  //   // Should be more performant than calling .reverse(), or reading
+  //   // cssRules.length and inserting last, also non-mutative.
+  //   for (let index = cacheEntries.length - 1; index >= 0; index--) {
+  //     insertRule(cacheEntries[index]);
+  //   }
 
-    return () => {
-      // This is not necessary, and hinders performance
-      // stylesheet.deleteRule(index)
-    };
-    // }, [cacheEntries]);
-  });
+  //   return () => {
+  //     // This is not necessary, and hinders performance
+  //     // stylesheet.deleteRule(index)
+  //   };
+  //   // }, [cacheEntries]);
+  // });
 
-  // Add space to facilitate concatenation
-  return classNames + " ";
+  return classNames;
 };
