@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/Polymer/tachometer/master/config.schema.json",
-  "timeout": 10,
+  "timeout": 5,
   "benchmarks": [
     {
       "name": "use-styles",
@@ -12,26 +12,8 @@
       }
     },
     {
-      "name": "use-styles-css-typed-om",
-      "url": "dist/index.html?library=use-styles-css-typed-om&benchmark=deep",
-      "measurement": "global",
-      "browser": {
-        "name": "chrome",
-        "headless": true
-      }
-    },
-    {
       "name": "use-styles-published",
       "url": "dist/index.html?library=use-styles-published&benchmark=deep",
-      "measurement": "global",
-      "browser": {
-        "name": "chrome",
-        "headless": true
-      }
-    },
-    {
-      "name": "use-styles-published-css-typed-om",
-      "url": "dist/index.html?library=use-styles-published-css-typed-om&benchmark=deep",
       "measurement": "global",
       "browser": {
         "name": "chrome",
