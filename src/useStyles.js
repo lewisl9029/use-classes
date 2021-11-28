@@ -181,6 +181,8 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
     if (stylesEntryName.startsWith("@media")) {
       const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
 
+      // This is probably slower than directly pushing each result, but I really
+      // don't want to have to start sharing mutative counters
       cacheEntries.push(
         ...stylesEntriesToCacheEntriesWithPseudoClass({
           stylesEntries: stylesEntriesWithMediaQuery,
