@@ -164,24 +164,18 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
   //   );
   // }
 
-  const cacheValues = cache.stylesToCacheValues(styles, {
-    resolveStyle,
-  });
+  const cacheValues = React.useMemo(
+    () =>
+      cache.stylesToCacheValues(styles, {
+        resolveStyle,
+      }),
+    [styles, cache.stylesToCacheValues, resolveStyle]
+  );
 
-  // const cacheValues = measure("stylesToCacheValues", () =>
-  //   React.useMemo(
-  //     () => stylesToCacheValues(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     return cacheValuesToClassNames(cacheValues);
-  //   }, [cacheValues])
-  // );
-
-  return cacheValuesToClassNames(cacheValues);
+  return React.useMemo(
+    () => cacheValuesToClassNames(cacheValues),
+    [cacheValues]
+  );
 };
 
 // For psuedoclasses support, and potentially other features that live at this layer?
@@ -244,24 +238,18 @@ export const usePseudoClasses = (pseudoClasses, { resolveStyle } = {}) => {
   //   );
   // }
 
-  const cacheValues = cache.pseudoClassesToCacheValues(pseudoClasses, {
-    resolveStyle,
-  });
+  const cacheValues = React.useMemo(
+    () =>
+      cache.pseudoClassesToCacheValues(pseudoClasses, {
+        resolveStyle,
+      }),
+    [pseudoClasses, cache.pseudoClassesToCacheValues, resolveStyle]
+  );
 
-  // const cacheValues = measure("toCacheValues", () =>
-  //   React.useMemo(
-  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     return cacheValuesToClassNames(cacheValues);
-  //   }, [cacheValues])
-  // );
-
-  return cacheValuesToClassNames(cacheValues);
+  return React.useMemo(
+    () => cacheValuesToClassNames(cacheValues),
+    [cacheValues]
+  );
 };
 
 const stylesOrPseudoClassesToCacheValues = ({
@@ -387,24 +375,18 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
   //   );
   // }
 
-  const cacheValues = cache.mediaQueriesToCacheValues(mediaQueries, {
-    resolveStyle,
-  });
+  const cacheValues = React.useMemo(
+    () =>
+      cache.mediaQueriesToCacheValues(mediaQueries, {
+        resolveStyle,
+      }),
+    [mediaQueries, cache.mediaQueriesToCacheValues, resolveStyle]
+  );
 
-  // const cacheValues = measure("toCacheValues", () =>
-  //   React.useMemo(
-  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     return cacheValuesToClassNames(cacheValues);
-  //   }, [cacheValues])
-  // );
-
-  return cacheValuesToClassNames(cacheValues);
+  return React.useMemo(
+    () => cacheValuesToClassNames(cacheValues),
+    [cacheValues]
+  );
 };
 
 export const StylesProvider = ({
