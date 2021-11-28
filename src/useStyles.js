@@ -93,7 +93,9 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
     const [stylesEntryName, stylesEntryValue] =
       stylesEntries[stylesEntriesIndex];
 
-    if (stylesEntryName[0] === ":") {
+    // startsWith might actually be faster than stylesEntryName[0] here!
+    // https://stackoverflow.com/a/62093300
+    if (stylesEntryName.startsWith(":")) {
       const stylesEntriesWithPsuedoClass = Object.entries(stylesEntryValue);
       for (
         let stylesEntriesWithPsuedoClassIndex = 0;
