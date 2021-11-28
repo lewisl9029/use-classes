@@ -28,7 +28,7 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = (list) => [].concat(...list);
 
-const styleToCacheEntry = ({
+const styleToCacheValue = ({
   style,
   pseudoClass,
   mediaQuery,
@@ -39,10 +39,10 @@ const styleToCacheEntry = ({
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
   const { name, value } = resolveStyle?.(style) ?? style;
-  const existingCacheEntry = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
+  const existingCacheValue = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
 
-  if (existingCacheEntry) {
-    return existingCacheEntry;
+  if (existingCacheValue) {
+    return existingCacheValue;
   }
 
   if (!cache[mediaQuery]) {
@@ -70,9 +70,27 @@ const styleToCacheEntry = ({
   );
 };
 
+const stylesToCacheValues = ({ styles, cache, resolveStyle, insertRule }) => {
+  // Reuse styles entries array to avoid extra allocations.
+  let cacheValues = Object.entries(styles);
+
+  for (let index = 0; index < cacheValues.length; index++) {
+    const [name, value] = cacheValues[index];
+
+    cacheValues[index] = styleToCacheValue({
+      style: { name, value },
+      cache,
+      resolveStyle,
+      insertRule,
+    });
+  }
+
+  return cacheValues;
+};
+
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
-const stylesEntriesToCacheEntriesWithPseudoClass = ({
+const stylesEntriesToCacheValuesWithPseudoClass = ({
   stylesEntries,
   mediaQuery,
   cache,
@@ -82,9 +100,9 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudoclasses or media queries are present, so
   // style & cache length are equal
-  let cacheEntries = new Array(stylesEntries.length);
-  let cacheEntriesIndex = 0;
-  // let cacheEntries = [];
+  let cacheValues = new Array(stylesEntries.length);
+  let cacheValuesIndex = 0;
+  // let cacheValues = [];
   for (
     let stylesEntriesIndex = 0;
     stylesEntriesIndex < stylesEntries.length;
@@ -105,7 +123,7 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
         const [name, value] =
           stylesEntriesWithPsuedoClass[stylesEntriesWithPsuedoClassIndex];
 
-        cacheEntries[cacheEntriesIndex] = styleToCacheEntry({
+        cacheValues[cacheValuesIndex] = styleToCacheValue({
           style: { name, value },
           pseudoClass: stylesEntryName,
           mediaQuery,
@@ -113,29 +131,29 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
           resolveStyle,
           insertRule,
         });
-        cacheEntriesIndex++;
+        cacheValuesIndex++;
       }
       continue;
     }
 
-    cacheEntries[cacheEntriesIndex] = styleToCacheEntry({
+    cacheValues[cacheValuesIndex] = styleToCacheValue({
       style: { name: stylesEntryName, value: stylesEntryValue },
       mediaQuery,
       cache,
       resolveStyle,
       insertRule,
     });
-    cacheEntriesIndex++;
+    cacheValuesIndex++;
   }
 
-  return cacheEntries;
+  return cacheValues;
 
   // return stylesEntries.reduce(
   //   (stylesEntriesFlattened, [styleEntryName, styleEntryValue]) => {
   //     if (styleEntryName[0] === ":") {
   //       stylesEntriesFlattened.push(
   //         ...Object.entries(value).map(([name, value]) =>
-  //           styleToCacheEntry({
+  //           styleToCacheValue({
   //             style: { name, value },
   //             pseudoClass: styleEntryName,
   //             mediaQuery,
@@ -147,7 +165,7 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
   //       return stylesEntriesFlattened;
   //     }
   //     stylesEntriesFlattened.push(
-  //       styleToCacheEntry({
+  //       styleToCacheValue({
   //         style: { name: styleEntryName, value: styleEntryValue },
   //         mediaQuery,
   //         cache,
@@ -164,13 +182,13 @@ const stylesEntriesToCacheEntriesWithPseudoClass = ({
 //
 // TODO: Many other at rules will need to be purpose built. For instance:
 // @keyframes names will become globally scoped, and has special structure
-const stylesEntriesToCacheEntriesWithMediaQuery = ({
+const stylesEntriesToCacheValuesWithMediaQuery = ({
   stylesEntries,
   cache,
   resolveStyle,
   insertRule,
 }) => {
-  let cacheEntries = [];
+  let cacheValues = [];
   for (
     let stylesEntriesIndex = 0;
     stylesEntriesIndex < stylesEntries.length;
@@ -185,8 +203,8 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
 
       // This is probably slower than directly pushing each result, but I really
       // don't want to have to start sharing mutative counters
-      cacheEntries.push(
-        ...stylesEntriesToCacheEntriesWithPseudoClass({
+      cacheValues.push(
+        ...stylesEntriesToCacheValuesWithPseudoClass({
           stylesEntries: stylesEntriesWithMediaQuery,
           mediaQuery: stylesEntryName,
           cache,
@@ -197,8 +215,8 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
       continue;
     }
 
-    cacheEntries.push(
-      ...stylesEntriesToCacheEntriesWithPseudoClass({
+    cacheValues.push(
+      ...stylesEntriesToCacheValuesWithPseudoClass({
         stylesEntries: [stylesEntry],
         cache,
         resolveStyle,
@@ -207,14 +225,14 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
     );
   }
 
-  return cacheEntries;
+  return cacheValues;
 
   // return stylesEntries.reduce((stylesEntriesFlattened, styleEntry) => {
   //   const [styleEntryName, styleEntryValue] = styleEntry;
   //   if (styleEntryName.startsWith("@media")) {
   //     stylesEntriesFlattened.push(
   //       ...Object.entries(value).map((stylesEntriesWithPsuedo) =>
-  //         stylesEntriesToCacheEntriesWithPseudoClass({
+  //         stylesEntriesToCacheValuesWithPseudoClass({
   //           stylesEntries: stylesEntriesWithPsuedo,
   //           mediaQuery: styleEntryName,
   //           cache,
@@ -225,7 +243,7 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
   //     return stylesEntriesFlattened;
   //   }
   //   stylesEntriesFlattened.push(
-  //     ...stylesEntriesToCacheEntriesWithPseudoClass({
+  //     ...stylesEntriesToCacheValuesWithPseudoClass({
   //       stylesEntries: [styleEntry],
   //       cache,
   //       resolveStyle,
@@ -277,14 +295,14 @@ export const StylesProvider = ({
   }, [insertStylesheet]);
 
   const insertRule = React.useCallback(
-    (cacheEntry) => {
+    (cacheValue) => {
       const {
         className,
         pseudoClass = "",
         mediaQuery,
         name,
         value,
-      } = cacheEntry;
+      } = cacheValue;
       if (!stylesheetRef.current) {
         insertStylesheet();
       }
@@ -307,7 +325,7 @@ export const StylesProvider = ({
           stylesheetRef.current.cssRules.length
         );
       }
-      return cacheEntry;
+      return cacheValue;
     },
     [insertStylesheet, useCssTypedOm]
   );
@@ -317,10 +335,10 @@ export const StylesProvider = ({
     cacheContext.Provider,
     {
       value: {
-        toCacheEntries: React.useCallback(
-          (stylesEntries, { resolveStyle }) =>
-            stylesEntriesToCacheEntriesWithMediaQuery({
-              stylesEntries,
+        toCacheValues: React.useCallback(
+          (styles, { resolveStyle }) =>
+            stylesToCacheValues({
+              styles,
               cache: initialCache,
               resolveStyle,
               insertRule,
@@ -359,52 +377,31 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
   //   );
   // }
 
-  const cacheEntries = cache.toCacheEntries(Object.entries(styles), {
+  const cacheValues = cache.toCacheValues(styles, {
     resolveStyle,
   });
 
-  // const cacheEntries = measure("toCacheEntries", () =>
+  // const cacheValues = measure("toCacheValues", () =>
   //   React.useMemo(
-  //     () => toCacheEntries(Object.entries(styles), { resolveStyle }),
+  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
   //     [styles, resolveStyle]
   //   )
   // );
 
   let classNames = "";
-  for (let index = 0; index < cacheEntries.length; index++) {
-    classNames += cacheEntries[index].className + " ";
+  for (let index = 0; index < cacheValues.length; index++) {
+    classNames += cacheValues[index].className + " ";
   }
   // const classNames = measure("classNames", () =>
   //   React.useMemo(() => {
   //     let classNames = "";
-  //     for (let index = 0; index < cacheEntries.length; index++) {
-  //       classNames += cacheEntries[index].className + " ";
+  //     for (let index = 0; index < cacheValues.length; index++) {
+  //       classNames += cacheValues[index].className + " ";
   //     }
 
   //     return classNames;
-  //   }, [cacheEntries])
+  //   }, [cacheValues])
   // );
-
-  // React.useLayoutEffect(() => {
-  //   // measure("insert", () => {
-  //   //   cacheEntries.forEach(insertRule);
-  //   // });
-  //   // Insert in reverse order to enable later mediaQuerys to override earlier
-  //   // styles due to insertRules defaulting to inserting at index 0:
-  //   // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/insertRule
-  //   //
-  //   // Should be more performant than calling .reverse(), or reading
-  //   // cssRules.length and inserting last, also non-mutative.
-  //   for (let index = cacheEntries.length - 1; index >= 0; index--) {
-  //     insertRule(cacheEntries[index]);
-  //   }
-
-  //   return () => {
-  //     // This is not necessary, and hinders performance
-  //     // stylesheet.deleteRule(index)
-  //   };
-  //   // }, [cacheEntries]);
-  // });
 
   return classNames;
 };
