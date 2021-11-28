@@ -9,9 +9,17 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@lewisl9029/use-styles@workspace:."
   dependencies:
+    csstype: ^3.0.10
     react: ^16.8.0
   languageName: unknown
   linkType: soft
+
+"csstype@npm:^3.0.10":
+  version: 3.0.10
+  resolution: "csstype@npm:3.0.10"
+  checksum: 20a8fa324f2b33ddf94aa7507d1b6ab3daa6f3cc308888dc50126585d7952f2471de69b2dbe0635d1fdc31223fef8e070842691877e725caf456e2378685a631
+  languageName: node
+  linkType: hard
 
 "js-tokens@npm:^3.0.0 || ^4.0.0":
   version: 4.0.0

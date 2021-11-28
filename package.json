@@ -20,5 +20,8 @@
   },
   "peerDepencencies": {
     "react": "^16.8.0"
+  },
+  "dependencies": {
+    "csstype": "^3.0.10"
   }
 }

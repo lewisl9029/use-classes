@@ -32,34 +32,40 @@ const flatten = (list) => [].concat(...list);
 
 const toCacheEntries = ({
   stylesEntries,
-  psuedoClass,
+  pseudoClass,
+  mediaQuery,
   cache,
   resolveStyle,
 }) => {
   return stylesEntries.map(([rawName, rawValue]) => {
     const style = { name: rawName, value: rawValue };
     const { name, value } = resolveStyle?.(style) ?? style;
-    const existingCacheEntry = cache[psuedoClass]?.[name]?.[value];
+    const existingCacheEntry =
+      cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
 
     if (existingCacheEntry) {
       return existingCacheEntry;
     }
 
     // psuedoclass need to be a part of id to allow distinct targetting
-    const id = `${psuedoClass}_${name}_${value}`;
+    const id = `${mediaQuery}_${pseudoClass}_${name}_${value}`;
     // console.log('uncached rule: ' + id)
 
     const className = `r_${hash(id)}`;
-    if (!cache[psuedoClass]) {
-      cache[psuedoClass] = {};
+
+    if (!cache[mediaQuery]) {
+      cache[mediaQuery] = {};
     }
-    if (!cache[psuedoClass][name]) {
-      cache[psuedoClass][name] = {};
+    if (!cache[mediaQuery][pseudoClass]) {
+      cache[mediaQuery][pseudoClass] = {};
+    }
+    if (!cache[mediaQuery][pseudoClass][name]) {
+      cache[mediaQuery][pseudoClass][name] = {};
     }
 
-    const cacheEntry = { id, className, psuedoClass, name, value };
+    const cacheEntry = { id, className, pseudoClass, mediaQuery, name, value };
 
-    cache[psuedoClass][name][value] = cacheEntry;
+    cache[mediaQuery][pseudoClass][name][value] = cacheEntry;
 
     return cacheEntry;
   });
@@ -68,7 +74,7 @@ const toCacheEntries = ({
 // Alternative version with 1d cache, benchmarks much slower
 // const toCacheEntries = ({
 //   stylesEntries,
-//   psuedoClass,
+//   pseudoClass,
 //   cache,
 //   resolveStyle,
 // }) => {
@@ -76,7 +82,7 @@ const toCacheEntries = ({
 //     const style = { name: rawName, value: rawValue };
 //     const { name, value } = resolveStyle?.(style) ?? style;
 //     // psuedoclass need to be a part of id to allow distinct targetting
-//     const id = `${psuedoClass}_${name}_${value}`;
+//     const id = `${pseudoClass}_${name}_${value}`;
 //     const existingCacheEntry = cache[id];
 
 //     if (existingCacheEntry) {
@@ -87,7 +93,7 @@ const toCacheEntries = ({
 
 //     const className = `r_${hash(id)}`;
 
-//     const cacheEntry = { id, className, psuedoClass, name, value };
+//     const cacheEntry = { id, className, pseudoClass, name, value };
 
 //     cache[id] = cacheEntry;
 
@@ -97,33 +103,40 @@ const toCacheEntries = ({
 
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
-const toCacheEntriesLayer2 = ({ stylesEntries, cache, resolveStyle }) => {
+const toCacheEntriesWithPseudo = ({
+  stylesEntries,
+  mediaQuery,
+  cache,
+  resolveStyle,
+}) => {
   // TODO: probably not the most efficient thing in the world, can be reduced to
   // single pass + flatten without intermediate grouping
-  const { withPsuedoClass, withoutPsuedoClass } = stylesEntries.reduce(
+  const { withPseudoClass, withoutPseudoClass } = stylesEntries.reduce(
     (groups, entry) => {
       const key = entry[0];
       if (key[0] === ":") {
-        groups.withPsuedoClass.push(entry);
+        groups.withPseudoClass.push(entry);
       } else {
-        groups.withoutPsuedoClass.push(entry);
+        groups.withoutPseudoClass.push(entry);
       }
       return groups;
     },
-    { withPsuedoClass: [], withoutPsuedoClass: [] }
+    { withPseudoClass: [], withoutPseudoClass: [] }
   );
 
   return [
     ...toCacheEntries({
-      stylesEntries: withoutPsuedoClass,
+      stylesEntries: withoutPseudoClass,
+      mediaQuery,
       cache,
       resolveStyle,
     }),
     ...flatten(
-      withPsuedoClass.map(([psuedoClass, styles]) =>
+      withPseudoClass.map(([pseudoClass, styles]) =>
         toCacheEntries({
           stylesEntries: Object.entries(styles),
-          psuedoClass,
+          mediaQuery,
+          pseudoClass,
           cache,
           resolveStyle,
         })
@@ -131,8 +144,49 @@ const toCacheEntriesLayer2 = ({ stylesEntries, cache, resolveStyle }) => {
     ),
   ];
 };
-// TODO: support media queries or recommend component size queries instead? what about keyframes?
-const toCacheEntriesLayer3 = () => {};
+
+// For at rules, currently only @media.
+//
+// TODO: Many other at rules will need to be purpose built. For instance:
+// @keyframes names will become globally scoped, and has special structure
+const toCacheEntriesWithMediaQuery = ({
+  stylesEntries,
+  cache,
+  resolveStyle,
+}) => {
+  // TODO: probably not the most efficient thing in the world, can be reduced to
+  // single pass + flatten without intermediate grouping
+  const { withMediaQuery, withoutMediaQuery } = stylesEntries.reduce(
+    (groups, entry) => {
+      const key = entry[0];
+      if (key.startsWith("@media")) {
+        groups.withMediaQuery.push(entry);
+      } else {
+        groups.withoutMediaQuery.push(entry);
+      }
+      return groups;
+    },
+    { withMediaQuery: [], withoutMediaQuery: [] }
+  );
+
+  return [
+    ...toCacheEntriesWithPseudo({
+      stylesEntries: withoutMediaQuery,
+      cache,
+      resolveStyle,
+    }),
+    ...flatten(
+      withMediaQuery.map(([mediaQuery, styles]) =>
+        toCacheEntriesWithPseudo({
+          stylesEntries: Object.entries(styles),
+          mediaQuery,
+          cache,
+          resolveStyle,
+        })
+      )
+    ),
+  ];
+};
 
 export const StylesProvider = ({
   children,
@@ -181,7 +235,7 @@ export const StylesProvider = ({
     {
       value: {
         insertRule: React.useCallback(
-          ({ id, className, psuedoClass = "", name, value }) => {
+          ({ id, className, pseudoClass = "", mediaQuery, name, value }) => {
             if (!stylesheetRef.current) {
               insertStylesheet();
             }
@@ -194,12 +248,16 @@ export const StylesProvider = ({
             if (useCssTypedOm) {
               // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
               // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
-              const rule = `.${className}${psuedoClass} {}`;
-              const index = stylesheetRef.current.insertRule(rule);
+              const rule = `.${className}${pseudoClass} {}`;
+              const index = stylesheetRef.current.insertRule(
+                mediaQuery ? `${mediaQuery} {${rule}}` : rule
+              );
               stylesheetRef.current.cssRules[index].styleMap.set(name, value);
             } else {
-              const rule = `.${className}${psuedoClass} { ${name}: ${value}; }`;
-              stylesheetRef.current.insertRule(rule);
+              const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
+              stylesheetRef.current.insertRule(
+                mediaQuery ? `${mediaQuery} {${rule}}` : rule
+              );
             }
             // mutative cache for perf
             defaultInsertedRules.add(id);
@@ -208,7 +266,7 @@ export const StylesProvider = ({
         ),
         toCacheEntries: React.useCallback(
           (stylesEntries, { resolveStyle }) =>
-            toCacheEntriesLayer2({
+            toCacheEntriesWithMediaQuery({
               stylesEntries,
               cache: initialCache,
               resolveStyle,
@@ -222,6 +280,22 @@ export const StylesProvider = ({
   );
 };
 
+/**
+ * A low level building block to style React elements with great performance and
+ * minimal indirection. Can also be composed into custom styling hooks using a
+ * powerful style transform API.
+ *
+ * Call it with a CSS styles object and pass the result to a `className` prop.
+ *
+ * @param { import("./useStyles.types").StylesWithMediaQuery } styles
+ *
+ * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to useStyles can also be joined together with `+`.
+ */
 export const useStyles = (styles, { resolveStyle } = {}) => {
   const cache = React.useContext(cacheContext);
 
@@ -262,7 +336,16 @@ export const useStyles = (styles, { resolveStyle } = {}) => {
     // measure("insert", () => {
     //   cacheEntries.forEach(insertRule);
     // });
-    cacheEntries.forEach(insertRule);
+    const length = cacheEntries.length;
+    // Insert in reverse order to enable later mediaQuerys to override earlier
+    // styles due to insertRules defaulting to inserting at index 0:
+    // https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleSheet/insertRule
+    //
+    // Should be more performant than calling .reverse(), or reading
+    // cssRules.length and inserting last, also non-mutative.
+    cacheEntries.forEach((_cacheEntry, index) =>
+      insertRule(cacheEntries[length - 1 - index])
+    );
 
     return () => {
       // This is not necessary, and hinders performance
