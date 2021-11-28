@@ -12,6 +12,15 @@
       }
     },
     {
+      "name": "use-styles-memo",
+      "url": "dist/index.html?library=use-styles-memo&benchmark=deep",
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
+    },
+    {
       "name": "use-styles-published",
       "url": "dist/index.html?library=use-styles-published&benchmark=deep",
       "measurement": "global",
