@@ -1911,10 +1911,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lewisl9029/use-styles@npm:^3.1.2":
-  version: 3.1.2
-  resolution: "@lewisl9029/use-styles@npm:3.1.2"
-  checksum: 165423b9992b00e174d3fb7a7042365216b3c4451b43e516e8b29c9d32b852dcba4c20606e4c3e893b170e168ba2e5df3201342efff0979a0f48ae37e93db20c
+"@lewisl9029/use-styles@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "@lewisl9029/use-styles@npm:6.0.0"
+  dependencies:
+    csstype: ^3.0.10
+  checksum: 03cc471105b9097370091f71cd006e3e09457301f0bb51428da7ea90fda2766f919363f4e371e9e7d47a8c340069d73fe8c584130b4a0c214c9ce14a46ca4c9d
   languageName: node
   linkType: hard
 
@@ -2017,7 +2019,7 @@ __metadata:
     "@emotion/core": ^10.0.10
     "@emotion/react": ^11.6.0
     "@emotion/styled": ^10.0.12
-    "@lewisl9029/use-styles": ^3.1.2
+    "@lewisl9029/use-styles": ^6.0.0
     "@webpack-cli/serve": ^0.2.0
     aphrodite: ^2.2.0
     babel-loader: ^8.0.6
@@ -4568,6 +4570,13 @@ __metadata:
   version: 2.6.13
   resolution: "csstype@npm:2.6.13"
   checksum: fe2cf86bc0e03f208543f4179b95384604d16a8bbdf06fd4a658e3e4e044f570e76ea37bb54905bd20d9ca83b840dc4a13e2efcd7e3df287050ab0ebc5903fd6
+  languageName: node
+  linkType: hard
+
+"csstype@npm:^3.0.10":
+  version: 3.0.10
+  resolution: "csstype@npm:3.0.10"
+  checksum: 20a8fa324f2b33ddf94aa7507d1b6ab3daa6f3cc308888dc50126585d7952f2471de69b2dbe0635d1fdc31223fef8e070842691877e725caf456e2378685a631
   languageName: node
   linkType: hard
 
