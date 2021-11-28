@@ -183,6 +183,8 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
     if (stylesEntryName.startsWith("@media")) {
       const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
 
+      // This is probably slower than directly pushing each result, but I really
+      // don't want to have to start sharing mutative counters
       cacheEntries.push(
         ...stylesEntriesToCacheEntriesWithPseudoClass({
           stylesEntries: stylesEntriesWithMediaQuery,
@@ -292,13 +294,17 @@ export const StylesProvider = ({
         // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
         const rule = `.${className}${pseudoClass} {}`;
         const index = stylesheetRef.current.insertRule(
-          mediaQuery ? `${mediaQuery} {${rule}}` : rule
+          mediaQuery ? `${mediaQuery} {${rule}}` : rule,
+          stylesheetRef.current.cssRules.length
         );
         stylesheetRef.current.cssRules[index].styleMap.set(name, value);
       } else {
         const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
         stylesheetRef.current.insertRule(
-          mediaQuery ? `${mediaQuery} {${rule}}` : rule
+          mediaQuery ? `${mediaQuery} {${rule}}` : rule,
+          // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
+          // TODO: longer term we should consider splitting media queries and pseudo selectors into separate hooks.
+          stylesheetRef.current.cssRules.length
         );
       }
       return cacheEntry;
