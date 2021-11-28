@@ -54,6 +54,10 @@ const styleToCacheEntry = ({
   if (!cache[mediaQuery][pseudoClass][name]) {
     cache[mediaQuery][pseudoClass][name] = {};
   }
+
+  // This ends up happening during render. That sounds unsafe, but is actually
+  // perfectly fine in practice since these rules are content addressed and
+  // don't affect styling until classNames update after render.
   return insertRule(
     (cache[mediaQuery][pseudoClass][name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
@@ -176,24 +180,16 @@ const stylesEntriesToCacheEntriesWithMediaQuery = ({
     // TODO: startsWith might not be the fastest way to check
     if (stylesEntryName.startsWith("@media")) {
       const stylesEntriesWithMediaQuery = Object.entries(stylesEntryValue);
-      for (
-        let stylesEntriesWithMediaQueryIndex = 0;
-        stylesEntriesWithMediaQueryIndex < stylesEntriesWithMediaQuery.length;
-        stylesEntriesWithMediaQueryIndex++
-      ) {
-        const stylesEntriesWithPsuedo =
-          stylesEntriesWithMediaQuery[stylesEntriesWithMediaQueryIndex];
 
-        cacheEntries.push(
-          ...stylesEntriesToCacheEntriesWithPseudoClass({
-            stylesEntries: stylesEntriesWithPsuedo,
-            mediaQuery: stylesEntryName,
-            cache,
-            resolveStyle,
-            insertRule,
-          })
-        );
-      }
+      cacheEntries.push(
+        ...stylesEntriesToCacheEntriesWithPseudoClass({
+          stylesEntries: stylesEntriesWithMediaQuery,
+          mediaQuery: stylesEntryName,
+          cache,
+          resolveStyle,
+          insertRule,
+        })
+      );
       continue;
     }
 
