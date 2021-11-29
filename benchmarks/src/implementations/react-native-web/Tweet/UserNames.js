@@ -1,39 +1,40 @@
-import AppText from './AppText';
-import PropTypes from 'prop-types';
-import { StyleSheet, ViewPropTypes } from 'react-native';
-import React, { PureComponent } from 'react';
+import AppText from "./AppText";
+import { StyleSheet } from "react-native";
+import React, { PureComponent } from "react";
 
 class UserNames extends PureComponent {
-  static displayName = 'UserNames';
-
-  static propTypes = {
-    fullName: PropTypes.string,
-    layout: PropTypes.oneOf(['nowrap', 'stack']),
-    onPress: PropTypes.func,
-    screenName: PropTypes.string,
-    style: ViewPropTypes.style
-  };
+  static displayName = "UserNames";
 
   static defaultProps = {
-    layout: 'nowrap'
+    layout: "nowrap"
   };
 
   render() {
-    const { fullName, layout, onPress, screenName, style, ...other } = this.props;
+    const {
+      fullName,
+      layout,
+      onPress,
+      screenName,
+      style,
+      ...other
+    } = this.props;
 
     return (
       <AppText
         {...other}
         color="deepGray"
-        numberOfLines={layout === 'nowrap' ? 1 : null}
+        numberOfLines={layout === "nowrap" ? 1 : null}
         onPress={onPress}
         style={[styles.root, style]}
       >
         <AppText color="normal" weight="bold">
           {fullName}
         </AppText>
-        {layout === 'stack' ? ' \u000A' : ' '}
-        <AppText color="deepGray" style={styles.screenName}>{`@${screenName}`}</AppText>
+        {layout === "stack" ? " \u000A" : " "}
+        <AppText
+          color="deepGray"
+          style={styles.screenName}
+        >{`@${screenName}`}</AppText>
       </AppText>
     );
   }
@@ -41,11 +42,11 @@ class UserNames extends PureComponent {
 
 const styles = StyleSheet.create({
   root: {
-    display: 'inline-block'
+    display: "inline-block"
   },
   screenName: {
-    unicodeBidi: 'embed',
-    writingDirection: 'ltr'
+    unicodeBidi: "embed",
+    writingDirection: "ltr"
   }
 });
 

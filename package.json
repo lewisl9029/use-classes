@@ -15,11 +15,16 @@
   "files": [
     "src/**/*"
   ],
-  "devDependencies": {
-    "react": "^16.8.0"
+  "scripts": {
+    "start": "yarn workspace benchmarks start",
+    "build": "yarn workspace benchmarks build",
+    "benchmark": "yarn workspace benchmarks benchmark"
   },
+  "workspaces": [
+    "benchmarks"
+  ],
   "peerDepencencies": {
-    "react": "^16.8.0"
+    "react": "^18.0.0-beta-0cc724c77-20211125"
   },
   "dependencies": {
     "csstype": "^3.0.10"

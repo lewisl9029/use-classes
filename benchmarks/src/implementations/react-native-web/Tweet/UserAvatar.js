@@ -1,18 +1,10 @@
-import AspectRatio from './AspectRatio';
-import PropTypes from 'prop-types';
-import { Image, StyleSheet, ViewPropTypes } from 'react-native';
-import React, { PureComponent } from 'react';
-import theme from './theme';
+import AspectRatio from "./AspectRatio";
+import { Image, StyleSheet } from "react-native";
+import React, { PureComponent } from "react";
+import theme from "./theme";
 
 class UserAvatar extends PureComponent {
-  static displayName = 'UserAvatar';
-
-  static propTypes = {
-    accessibilityLabel: PropTypes.string,
-    circle: PropTypes.bool,
-    style: ViewPropTypes.style,
-    uri: PropTypes.string
-  };
+  static displayName = "UserAvatar";
 
   static defaultProps = {
     circle: false
@@ -45,20 +37,20 @@ class UserAvatar extends PureComponent {
   };
 }
 
-const nativeProps = { style: { backgroundColor: '#fff' } };
+const nativeProps = { style: { backgroundColor: "#fff" } };
 
 const styles = StyleSheet.create({
   root: {
-    borderRadius: '0.35rem'
+    borderRadius: "0.35rem"
   },
   circle: {
-    borderRadius: '9999px'
+    borderRadius: "9999px"
   },
   image: {
     backgroundColor: theme.colors.fadedGray,
-    display: 'block',
-    height: '100%',
-    width: '100%'
+    display: "block",
+    height: "100%",
+    width: "100%"
   }
 });
 

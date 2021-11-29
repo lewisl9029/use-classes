@@ -1,24 +1,8 @@
-import PropTypes from 'prop-types';
-import TweetAction from './TweetAction';
-import { View, ViewPropTypes, StyleSheet } from 'react-native';
-import React, { PureComponent } from 'react';
-
-const actionNames = ['reply', 'retweet', 'like', 'directMessage'];
+import TweetAction from "./TweetAction";
+import { View, StyleSheet } from "react-native";
+import React, { PureComponent } from "react";
 
 export default class TweetActionsBar extends PureComponent {
-  static propTypes = {
-    actions: PropTypes.arrayOf(
-      PropTypes.shape({
-        count: PropTypes.number,
-        label: PropTypes.string,
-        highlighted: PropTypes.bool,
-        name: PropTypes.oneOf(actionNames).isRequired,
-        onPress: PropTypes.func
-      })
-    ),
-    style: ViewPropTypes.style
-  };
-
   render() {
     const { actions, style } = this.props;
 
@@ -43,10 +27,10 @@ export default class TweetActionsBar extends PureComponent {
 
 const styles = StyleSheet.create({
   root: {
-    flexDirection: 'row'
+    flexDirection: "row"
   },
   action: {
-    display: 'block',
-    marginRight: '10%'
+    display: "block",
+    marginRight: "10%"
   }
 });
