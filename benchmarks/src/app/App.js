@@ -235,7 +235,7 @@ export default class App extends Component {
     libraryName,
     sampleCount
   }) => results => {
-    self.tachometerResult = results.mean;
+    self.tachometerResult = results.median;
     this.setState(
       state => ({
         results: state.results.concat([
