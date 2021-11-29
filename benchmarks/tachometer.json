@@ -46,6 +46,15 @@
         "name": "chrome",
         "headless": true
       }
+    },
+    {
+      "name": "css-modules",
+      "url": "dist/index.html?library=css-modules&benchmark=deep",
+      "measurement": "global",
+      "browser": {
+        "name": "chrome",
+        "headless": true
+      }
     }
   ]
 }
