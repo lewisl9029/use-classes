@@ -1,6 +1,6 @@
 {
   "name": "@lewisl9029/use-styles",
-  "version": "7.0.0",
+  "version": "7.0.0-dev",
   "description": "Use styles",
   "main": "src/useStyles.js",
   "repository": "https://github.com/lewisl9029/use-styles.git",
