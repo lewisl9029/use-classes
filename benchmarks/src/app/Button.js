@@ -1,13 +1,13 @@
-import { ColorPropType, StyleSheet, TouchableHighlight, Text } from 'react-native';
-import React, { Component } from 'react';
-import { bool, func, string } from 'prop-types';
+import { StyleSheet, TouchableHighlight, Text } from "react-native";
+import React, { Component } from "react";
+import { bool, func, string } from "prop-types";
 
 export default class Button extends Component<*> {
-  static displayName = '@app/Button';
+  static displayName = "@app/Button";
 
   static propTypes = {
     accessibilityLabel: string,
-    color: ColorPropType,
+    color: any,
     disabled: bool,
     onPress: func.isRequired,
     style: TouchableHighlight.propTypes.style,
@@ -42,7 +42,9 @@ export default class Button extends Component<*> {
         ]}
         testID={testID}
       >
-        <Text style={[styles.text, textStyle, disabled && styles.textDisabled]}>{title}</Text>
+        <Text style={[styles.text, textStyle, disabled && styles.textDisabled]}>
+          {title}
+        </Text>
       </TouchableHighlight>
     );
   }
@@ -50,22 +52,22 @@ export default class Button extends Component<*> {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#2196F3',
+    backgroundColor: "#2196F3",
     borderRadius: 0,
-    justifyContent: 'center'
+    justifyContent: "center"
   },
   text: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 20,
-    fontWeight: '500',
+    fontWeight: "500",
     padding: 8,
-    textAlign: 'center',
-    textTransform: 'uppercase'
+    textAlign: "center",
+    textTransform: "uppercase"
   },
   buttonDisabled: {
-    backgroundColor: '#dfdfdf'
+    backgroundColor: "#dfdfdf"
   },
   textDisabled: {
-    color: '#a1a1a1'
+    color: "#a1a1a1"
   }
 });

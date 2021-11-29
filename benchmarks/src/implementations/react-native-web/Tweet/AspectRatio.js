@@ -1,15 +1,8 @@
-import PropTypes from 'prop-types';
-import React, { PureComponent } from 'react';
-import { StyleSheet, View, ViewPropTypes } from 'react-native';
+import React, { PureComponent } from "react";
+import { StyleSheet, View } from "react-native";
 
 class AspectRatio extends PureComponent {
-  static displayName = 'AspectRatio';
-
-  static propTypes = {
-    children: PropTypes.any,
-    ratio: PropTypes.number,
-    style: ViewPropTypes.style
-  };
+  static displayName = "AspectRatio";
 
   static defaultProps = {
     ratio: 1
@@ -30,11 +23,11 @@ class AspectRatio extends PureComponent {
 
 const styles = StyleSheet.create({
   root: {
-    overflow: 'hidden'
+    overflow: "hidden"
   },
   shim: {
-    display: 'block',
-    width: '100%'
+    display: "block",
+    width: "100%"
   }
 });
 

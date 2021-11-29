@@ -1,13 +1,28 @@
 /* eslint-disable react/prop-types */
-import React from 'react';
-import { style } from './View';
+import React from "react";
 
 export default ({ children, color, x, y, size, ...props }) => {
   return (
     <div {...props} style={{ borderBottomColor: color }}>
       {children}
 
-      <style jsx>{style}</style>
+      <style jsx>
+        {`
+          align-items: stretch;
+          border-width: 0;
+          border-style: solid;
+          box-sizing: border-box;
+          display: flex;
+          flex-basis: auto;
+          flex-direction: column;
+          flex-shrink: 0;
+          margin: 0;
+          padding: 0;
+          position: relative;
+          min-height: 0;
+          min-width: 0;
+        `}
+      </style>
 
       <style jsx>
         {`

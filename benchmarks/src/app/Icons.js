@@ -1,33 +1,33 @@
-import React, { Fragment } from 'react';
-import { createElement, StyleSheet, Text } from 'react-native';
+import React, { Fragment } from "react";
+import { createElement, StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   root: {
-    display: 'inline-block',
-    fill: 'currentcolor',
-    height: '1.25em',
-    maxWidth: '100%',
-    position: 'relative',
-    userSelect: 'none',
-    textAlignVertical: 'text-bottom'
+    display: "inline-block",
+    fill: "currentcolor",
+    height: "1.25em",
+    maxWidth: "100%",
+    position: "relative",
+    userSelect: "none",
+    textAlignVertical: "text-bottom"
   }
 });
 
 const createIcon = children => {
   const Icon = props =>
     createElement(
-      'svg',
+      "svg",
       {
-        style: StyleSheet.compose(styles.root, props.style),
+        style: StyleSheet.compose(
+          styles.root,
+          props.style
+        ),
         width: 24,
         height: 24,
-        viewBox: '0 0 24 24'
+        viewBox: "0 0 24 24"
       },
       children
     );
-  Icon.propTypes = {
-    style: Text.propTypes.style
-  };
   return Icon;
 };
 
