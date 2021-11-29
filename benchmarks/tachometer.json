@@ -12,7 +12,7 @@
       }
     },
     {
-      "name": "use-styles-published",
+      "name": "use-styles-pub",
       "url": "dist/index.html?library=use-styles-published&benchmark=deep",
       "measurement": "global",
       "browser": {
