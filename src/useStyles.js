@@ -26,9 +26,9 @@ const measure = (name, fn) => fn();
 
 // Significantly more performant than `list.flat()`: https://stackoverflow.com/a/61416753
 // TODO: explore manual looping
-const flatten = (list) => [].concat(...list);
+const flatten = list => [].concat(...list);
 
-const cacheValuesToClassNames = (cacheValues) => {
+const cacheValuesToClassNames = cacheValues => {
   let classNames = "";
   for (let index = 0; index < cacheValues.length; index++) {
     if (cacheValues[index] === undefined) {
@@ -47,8 +47,7 @@ const styleToCacheValue = ({
   mediaQuery,
   cache,
   resolveStyle,
-  appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
@@ -74,25 +73,19 @@ const styleToCacheValue = ({
     cache[mediaQuery][pseudoClass][name] = {};
   }
 
-  // This ends up happening during render. That sounds unsafe, but is actually
-  // perfectly fine in practice since these rules are content addressed and
-  // don't affect styling until classNames update after render.
-  //
-  // Should consider migrating to useInsertionEffect on react 18 though: https://github.com/reactwg/react-18/discussions/110
-  return appendRule(
-    (cache[mediaQuery][pseudoClass][name][value] = {
-      // media query & psuedoclass need to be a part of id to allow distinct targetting
-      className: __development__enableVerboseClassnames
-        ? `r_${CSS.escape(
-            `${mediaQuery ?? "-"}_${pseudoClass ?? "-"}_${name}_${value}`
-          ).replaceAll(/\\./g, "_")}`
-        : `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
-      pseudoClass,
-      mediaQuery,
-      name,
-      value,
-    })
-  );
+  return (cache[mediaQuery][pseudoClass][name][value] = {
+    // media query & psuedoclass need to be a part of id to allow distinct targetting
+    className: __development__enableVerboseClassnames
+      ? `r_${CSS.escape(
+          `${mediaQuery ?? "-"}_${pseudoClass ?? "-"}_${name}_${value}`
+        ).replaceAll(/\\./g, "_")}`
+      : `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
+    pseudoClass,
+    mediaQuery,
+    name,
+    value,
+    inserted: false
+  });
 };
 
 // const styleToCacheValue = ({ style, cache, resolveStyle, appendRule }) => {
@@ -128,8 +121,7 @@ const stylesToCacheValues = ({
   mediaQuery,
   cache,
   resolveStyle,
-  appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   // Reuse styles entries array to avoid extra allocations.
   let cacheValues = Object.entries(styles);
@@ -143,8 +135,7 @@ const stylesToCacheValues = ({
       mediaQuery,
       cache,
       resolveStyle,
-      appendRule,
-      __development__enableVerboseClassnames,
+      __development__enableVerboseClassnames
     });
   }
 
@@ -182,7 +173,7 @@ export const useStyles = (
 
   const cacheValues = cache.stylesToCacheValues(styles, {
     resolveStyle,
-    __development__enableVerboseClassnames,
+    __development__enableVerboseClassnames
   });
 
   // const cacheValues = measure("stylesToCacheValues", () =>
@@ -198,6 +189,12 @@ export const useStyles = (
   //   }, [cacheValues])
   // );
 
+  React.useInsertionEffect(() => {
+    for (let index = 0; index < cacheValues.length; index++) {
+      cache.appendRule(cacheValues[index]);
+    }
+  });
+
   return cacheValuesToClassNames(cacheValues);
 };
 
@@ -207,8 +204,7 @@ const pseudoClassesToCacheValues = ({
   pseudoClasses,
   cache,
   resolveStyle,
-  appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   const pseudoClassesEntries = Object.entries(pseudoClasses);
 
@@ -218,8 +214,9 @@ const pseudoClassesToCacheValues = ({
     pseudoClassesEntriesIndex < pseudoClassesEntries.length;
     pseudoClassesEntriesIndex++
   ) {
-    const [pseudoClass, styles] =
-      pseudoClassesEntries[pseudoClassesEntriesIndex];
+    const [pseudoClass, styles] = pseudoClassesEntries[
+      pseudoClassesEntriesIndex
+    ];
 
     cacheValues.push(
       ...stylesToCacheValues({
@@ -227,8 +224,7 @@ const pseudoClassesToCacheValues = ({
         pseudoClass,
         cache,
         resolveStyle,
-        appendRule,
-        __development__enableVerboseClassnames,
+        __development__enableVerboseClassnames
       })
     );
   }
@@ -268,7 +264,7 @@ export const usePseudoClasses = (
 
   const cacheValues = cache.pseudoClassesToCacheValues(pseudoClasses, {
     resolveStyle,
-    __development__enableVerboseClassnames,
+    __development__enableVerboseClassnames
   });
 
   // const cacheValues = measure("toCacheValues", () =>
@@ -283,6 +279,11 @@ export const usePseudoClasses = (
   //     return cacheValuesToClassNames(cacheValues);
   //   }, [cacheValues])
   // );
+  React.useInsertionEffect(() => {
+    for (let index = 0; index < cacheValues.length; index++) {
+      cache.appendRule(cacheValues[index]);
+    }
+  });
 
   return cacheValuesToClassNames(cacheValues);
 };
@@ -292,8 +293,7 @@ const stylesOrPseudoClassesToCacheValues = ({
   mediaQuery,
   cache,
   resolveStyle,
-  appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   const stylesOrPseudoClassesEntries = Object.entries(stylesOrPseudoClasses);
   // preallocate the array for original size of style entries to optimize for
@@ -307,8 +307,9 @@ const stylesOrPseudoClassesToCacheValues = ({
     stylesOrPseudoClassesEntriesIndex < stylesOrPseudoClassesEntries.length;
     stylesOrPseudoClassesEntriesIndex++
   ) {
-    const [entryName, entryValue] =
-      stylesOrPseudoClassesEntries[stylesOrPseudoClassesEntriesIndex];
+    const [entryName, entryValue] = stylesOrPseudoClassesEntries[
+      stylesOrPseudoClassesEntriesIndex
+    ];
 
     // startsWith might actually be faster than entryName[0] here!
     // https://stackoverflow.com/a/62093300
@@ -327,8 +328,7 @@ const stylesOrPseudoClassesToCacheValues = ({
           mediaQuery,
           cache,
           resolveStyle,
-          appendRule,
-          __development__enableVerboseClassnames,
+          __development__enableVerboseClassnames
         });
         cacheValuesIndex++;
       }
@@ -340,8 +340,7 @@ const stylesOrPseudoClassesToCacheValues = ({
       mediaQuery,
       cache,
       resolveStyle,
-      appendRule,
-      __development__enableVerboseClassnames,
+      __development__enableVerboseClassnames
     });
     cacheValuesIndex++;
   }
@@ -357,8 +356,7 @@ const mediaQueriesToCacheValues = ({
   mediaQueries,
   cache,
   resolveStyle,
-  appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   const mediaQueriesEntries = Object.entries(mediaQueries);
   let cacheValues = [];
@@ -378,8 +376,7 @@ const mediaQueriesToCacheValues = ({
         mediaQuery,
         cache,
         resolveStyle,
-        appendRule,
-        __development__enableVerboseClassnames,
+        __development__enableVerboseClassnames
       })
     );
   }
@@ -416,7 +413,7 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
   // }
 
   const cacheValues = cache.mediaQueriesToCacheValues(mediaQueries, {
-    resolveStyle,
+    resolveStyle
   });
 
   // const cacheValues = measure("toCacheValues", () =>
@@ -432,13 +429,19 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
   //   }, [cacheValues])
   // );
 
+  React.useInsertionEffect(() => {
+    for (let index = 0; index < cacheValues.length; index++) {
+      cache.appendRule(cacheValues[index]);
+    }
+  });
+
   return cacheValuesToClassNames(cacheValues);
 };
 
 export const StylesProvider = ({
   children,
   options = {},
-  initialCache = defaultCache,
+  initialCache = defaultCache
 }) => {
   const stylesheetRef = React.useRef();
   const __experimental__useCssTypedOm = !!(
@@ -477,14 +480,20 @@ export const StylesProvider = ({
   }, [insertStylesheet]);
 
   const appendRule = React.useCallback(
-    (cacheValue) => {
+    cacheValue => {
       const {
         className,
         pseudoClass = "",
         mediaQuery,
         name,
         value,
+        inserted
       } = cacheValue;
+
+      if (inserted) {
+        return cacheValue;
+      }
+
       if (!stylesheetRef.current) {
         insertStylesheet();
       }
@@ -507,6 +516,7 @@ export const StylesProvider = ({
           stylesheetRef.current.cssRules.length
         );
       }
+      cacheValue.inserted = true;
       return cacheValue;
     },
     [insertStylesheet, __experimental__useCssTypedOm]
@@ -517,18 +527,18 @@ export const StylesProvider = ({
     cacheContext.Provider,
     {
       value: {
+        appendRule,
         stylesToCacheValues: React.useCallback(
           (styles, { resolveStyle, __development__enableVerboseClassnames }) =>
             stylesToCacheValues({
               styles,
               cache: initialCache,
               resolveStyle,
-              appendRule,
               __development__enableVerboseClassnames:
                 __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames,
+                options.__development__enableVerboseClassnames
             }),
-          [appendRule, options.__development__enableVerboseClassnames]
+          [options.__development__enableVerboseClassnames]
         ),
         pseudoClassesToCacheValues: React.useCallback(
           (
@@ -539,12 +549,11 @@ export const StylesProvider = ({
               pseudoClasses,
               cache: initialCache,
               resolveStyle,
-              appendRule,
               __development__enableVerboseClassnames:
                 __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames,
+                options.__development__enableVerboseClassnames
             }),
-          [appendRule, options.__development__enableVerboseClassnames]
+          [options.__development__enableVerboseClassnames]
         ),
         mediaQueriesToCacheValues: React.useCallback(
           (
@@ -555,15 +564,14 @@ export const StylesProvider = ({
               mediaQueries,
               cache: initialCache,
               resolveStyle,
-              appendRule,
               __development__enableVerboseClassnames:
                 __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames,
+                options.__development__enableVerboseClassnames
             }),
-          [appendRule, options.__development__enableVerboseClassnames]
+          [options.__development__enableVerboseClassnames]
         ),
-        __experimental__useCssTypedOm,
-      },
+        __experimental__useCssTypedOm
+      }
     },
     children
   );
