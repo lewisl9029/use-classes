@@ -45,10 +45,6 @@ const resolveStyleThemed = theme => {
 //     | Styles[Key]
 // }
 
-// type ThemedStyles = {
-//   [Key in keyof Styles]: Styles[Key] | ((_theme: theme_.Theme) => Styles[Key])
-// }
-
 export const useClasses = theme => {
   const classes = useClassesStandard.useClasses();
   return React.useCallback(
@@ -62,10 +58,6 @@ export const useClasses = theme => {
   );
 };
 
-// type ThemedPseudos = {
-//   [_Key in csstype_.Pseudos]?: ThemedStyles
-// }
-
 export const useClassesForPseudos = theme => {
   const classes = useClassesStandard.useClassesForPseudos();
   return React.useCallback(
@@ -78,10 +70,6 @@ export const useClassesForPseudos = theme => {
     [theme]
   );
 };
-
-// type ThemedMediaQueries = {
-//   [_Key in `@media${string}`]: ThemedStyles | ThemedPseudos
-// }
 
 export const useClassesForMediaQueries = theme => {
   const classes = useClassesStandard.useClassesForMediaQueries();

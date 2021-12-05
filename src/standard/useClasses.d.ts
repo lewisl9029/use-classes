@@ -1,4 +1,5 @@
 import * as Csstype from "csstype";
+import * as React from 'react';
 
 /**
  * An object with hyphenated CSS property names as keys, and CSS property value
@@ -49,7 +50,7 @@ type Classes = (styles: Styles, options: { resolveStyle: ResolveStyle }) => Clas
  * Can also be composed into custom styling hooks using a powerful style
  * transform API. See @lewisl9029/use-classes/themed for an example of this.
  */
-export type useClasses = () => Classes
+export function useClasses(): Classes
 
 
 /**
@@ -69,7 +70,7 @@ export type useClasses = () => Classes
 /**
  * A variant of {@link useClasses} used for pseudo classes/elements.
  */
-export type useClassesForPseudos = () => ClassesForPseudos
+export function useClassesForPseudos(): ClassesForPseudos
 
 /**
  * An object with media query strings as keys, and {@link Styles} or {@link Pseudos}
@@ -93,4 +94,9 @@ export type useClassesForPseudos = () => ClassesForPseudos
 /**
  * A variant of {@link useClasses} used for pseudo classes/elements.
  */
-export type useClassesForMediaQueries = () => ClassesForMediaQueries
+export function useClassesForMediaQueries(): ClassesForMediaQueries
+
+/**
+ * Provides a centralized cache and global options to downstream useClasses hooks.
+ */
+export function StylesProvider({ children }: {children: React.ReactNode}): JSX.Element
