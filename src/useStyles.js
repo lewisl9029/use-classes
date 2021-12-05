@@ -26,9 +26,9 @@ const measure = (name, fn) => fn();
 
 // Significantly more performant than `list.flat()`: https://stackoverflow.com/a/61416753
 // TODO: explore manual looping
-const flatten = (list) => [].concat(...list);
+const flatten = list => [].concat(...list);
 
-const cacheValuesToClassNames = (cacheValues) => {
+const cacheValuesToClassNames = cacheValues => {
   let classNames = "";
   for (let index = 0; index < cacheValues.length; index++) {
     if (cacheValues[index] === undefined) {
@@ -48,7 +48,7 @@ const styleToCacheValue = ({
   cache,
   resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
@@ -90,7 +90,7 @@ const styleToCacheValue = ({
       pseudoClass,
       mediaQuery,
       name,
-      value,
+      value
     })
   );
 };
@@ -129,7 +129,7 @@ const stylesToCacheValues = ({
   cache,
   resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   // Reuse styles entries array to avoid extra allocations.
   let cacheValues = Object.entries(styles);
@@ -144,7 +144,7 @@ const stylesToCacheValues = ({
       cache,
       resolveStyle,
       appendRule,
-      __development__enableVerboseClassnames,
+      __development__enableVerboseClassnames
     });
   }
 
@@ -182,7 +182,7 @@ export const useStyles = (
 
   const cacheValues = cache.stylesToCacheValues(styles, {
     resolveStyle,
-    __development__enableVerboseClassnames,
+    __development__enableVerboseClassnames
   });
 
   // const cacheValues = measure("stylesToCacheValues", () =>
@@ -201,6 +201,10 @@ export const useStyles = (
   return cacheValuesToClassNames(cacheValues);
 };
 
+export const useClasses = () => {
+  return React.useContext(cacheContext).classes;
+};
+
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
 const pseudoClassesToCacheValues = ({
@@ -208,7 +212,7 @@ const pseudoClassesToCacheValues = ({
   cache,
   resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   const pseudoClassesEntries = Object.entries(pseudoClasses);
 
@@ -218,8 +222,9 @@ const pseudoClassesToCacheValues = ({
     pseudoClassesEntriesIndex < pseudoClassesEntries.length;
     pseudoClassesEntriesIndex++
   ) {
-    const [pseudoClass, styles] =
-      pseudoClassesEntries[pseudoClassesEntriesIndex];
+    const [pseudoClass, styles] = pseudoClassesEntries[
+      pseudoClassesEntriesIndex
+    ];
 
     cacheValues.push(
       ...stylesToCacheValues({
@@ -228,7 +233,7 @@ const pseudoClassesToCacheValues = ({
         cache,
         resolveStyle,
         appendRule,
-        __development__enableVerboseClassnames,
+        __development__enableVerboseClassnames
       })
     );
   }
@@ -268,7 +273,7 @@ export const usePseudoClasses = (
 
   const cacheValues = cache.pseudoClassesToCacheValues(pseudoClasses, {
     resolveStyle,
-    __development__enableVerboseClassnames,
+    __development__enableVerboseClassnames
   });
 
   // const cacheValues = measure("toCacheValues", () =>
@@ -293,7 +298,7 @@ const stylesOrPseudoClassesToCacheValues = ({
   cache,
   resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   const stylesOrPseudoClassesEntries = Object.entries(stylesOrPseudoClasses);
   // preallocate the array for original size of style entries to optimize for
@@ -307,8 +312,9 @@ const stylesOrPseudoClassesToCacheValues = ({
     stylesOrPseudoClassesEntriesIndex < stylesOrPseudoClassesEntries.length;
     stylesOrPseudoClassesEntriesIndex++
   ) {
-    const [entryName, entryValue] =
-      stylesOrPseudoClassesEntries[stylesOrPseudoClassesEntriesIndex];
+    const [entryName, entryValue] = stylesOrPseudoClassesEntries[
+      stylesOrPseudoClassesEntriesIndex
+    ];
 
     // startsWith might actually be faster than entryName[0] here!
     // https://stackoverflow.com/a/62093300
@@ -328,7 +334,7 @@ const stylesOrPseudoClassesToCacheValues = ({
           cache,
           resolveStyle,
           appendRule,
-          __development__enableVerboseClassnames,
+          __development__enableVerboseClassnames
         });
         cacheValuesIndex++;
       }
@@ -341,7 +347,7 @@ const stylesOrPseudoClassesToCacheValues = ({
       cache,
       resolveStyle,
       appendRule,
-      __development__enableVerboseClassnames,
+      __development__enableVerboseClassnames
     });
     cacheValuesIndex++;
   }
@@ -358,7 +364,7 @@ const mediaQueriesToCacheValues = ({
   cache,
   resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames,
+  __development__enableVerboseClassnames
 }) => {
   const mediaQueriesEntries = Object.entries(mediaQueries);
   let cacheValues = [];
@@ -379,7 +385,7 @@ const mediaQueriesToCacheValues = ({
         cache,
         resolveStyle,
         appendRule,
-        __development__enableVerboseClassnames,
+        __development__enableVerboseClassnames
       })
     );
   }
@@ -416,7 +422,7 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
   // }
 
   const cacheValues = cache.mediaQueriesToCacheValues(mediaQueries, {
-    resolveStyle,
+    resolveStyle
   });
 
   // const cacheValues = measure("toCacheValues", () =>
@@ -438,14 +444,15 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
 export const StylesProvider = ({
   children,
   options = {},
-  initialCache = defaultCache,
+  // TODO: cache import/export
+  initialCache = defaultCache
 }) => {
   const stylesheetRef = React.useRef();
-  const __experimental__useCssTypedOm = !!(
-    options.__experimental__useCssTypedOm &&
-    window.CSS &&
-    window.CSS.number
-  );
+  // const __experimental__useCssTypedOm = !!(
+  //   options.__experimental__useCssTypedOm &&
+  //   window.CSS &&
+  //   window.CSS.number
+  // )
 
   const insertStylesheet = React.useCallback(() => {
     const id = `useStylesStylesheet`;
@@ -464,7 +471,7 @@ export const StylesProvider = ({
     stylesheetRef.current = element.sheet;
   }, []);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (stylesheetRef.current) {
       return;
     }
@@ -474,42 +481,52 @@ export const StylesProvider = ({
     // return () => {
     //   // dom_.removeChild(window.document.body, element)
     // }
-  }, [insertStylesheet]);
+  }, []);
 
-  const appendRule = React.useCallback(
-    (cacheValue) => {
-      const {
-        className,
-        pseudoClass = "",
-        mediaQuery,
-        name,
-        value,
-      } = cacheValue;
-      if (!stylesheetRef.current) {
-        insertStylesheet();
-      }
+  const appendRule = React.useCallback(cacheValue => {
+    const { className, pseudoClass = "", mediaQuery, name, value } = cacheValue;
+    if (!stylesheetRef.current) {
+      insertStylesheet();
+    }
 
-      if (__experimental__useCssTypedOm) {
-        // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
-        // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
-        const rule = `.${className}${pseudoClass} {}`;
-        const index = stylesheetRef.current.insertRule(
-          mediaQuery ? `${mediaQuery} {${rule}}` : rule,
-          stylesheetRef.current.cssRules.length
-        );
-        stylesheetRef.current.cssRules[index].styleMap.set(name, value);
-      } else {
-        const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
-        stylesheetRef.current.insertRule(
-          mediaQuery ? `${mediaQuery} {${rule}}` : rule,
-          // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
-          // TODO: longer term we should consider splitting media queries and pseudo selectors into separate hooks.
-          stylesheetRef.current.cssRules.length
-        );
-      }
-      return cacheValue;
+    // if (__experimental__useCssTypedOm) {
+    //   // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
+    //   // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
+    //   const rule = `.${className}${pseudoClass} {}`
+    //   const index = stylesheetRef.current.insertRule(
+    //     mediaQuery ? `${mediaQuery} {${rule}}` : rule,
+    //     stylesheetRef.current.cssRules.length,
+    //   )
+    //   stylesheetRef.current.cssRules[index].styleMap.set(name, value)
+    // } else {
+    const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
+    stylesheetRef.current.insertRule(
+      mediaQuery ? `${mediaQuery} {${rule}}` : rule,
+      // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
+      // TODO: longer term we should consider splitting media queries and pseudo selectors into separate hooks.
+      stylesheetRef.current.cssRules.length
+    );
+    // }
+    return cacheValue;
+  }, []);
+
+  const classes = React.useCallback(
+    (styles, { resolveStyle, __development__enableVerboseClassnames } = {}) => {
+      const cacheValues = stylesToCacheValues({
+        styles,
+        cache: initialCache,
+        resolveStyle,
+        appendRule,
+        __development__enableVerboseClassnames:
+          __development__enableVerboseClassnames ??
+          // intentionally not including this dependency for perf
+          // TODO: let users know it requires a refresh
+          options.__development__enableVerboseClassnames
+      });
+
+      return cacheValuesToClassNames(cacheValues);
     },
-    [insertStylesheet, __experimental__useCssTypedOm]
+    []
   );
 
   return React.createElement(
@@ -517,53 +534,41 @@ export const StylesProvider = ({
     cacheContext.Provider,
     {
       value: {
-        stylesToCacheValues: React.useCallback(
-          (styles, { resolveStyle, __development__enableVerboseClassnames }) =>
-            stylesToCacheValues({
-              styles,
-              cache: initialCache,
-              resolveStyle,
-              appendRule,
-              __development__enableVerboseClassnames:
-                __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames,
-            }),
-          [appendRule, options.__development__enableVerboseClassnames]
-        ),
-        pseudoClassesToCacheValues: React.useCallback(
-          (
-            pseudoClasses,
-            { resolveStyle, __development__enableVerboseClassnames }
-          ) =>
-            pseudoClassesToCacheValues({
-              pseudoClasses,
-              cache: initialCache,
-              resolveStyle,
-              appendRule,
-              __development__enableVerboseClassnames:
-                __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames,
-            }),
-          [appendRule, options.__development__enableVerboseClassnames]
-        ),
-        mediaQueriesToCacheValues: React.useCallback(
-          (
-            mediaQueries,
-            { resolveStyle, __development__enableVerboseClassnames }
-          ) =>
-            mediaQueriesToCacheValues({
-              mediaQueries,
-              cache: initialCache,
-              resolveStyle,
-              appendRule,
-              __development__enableVerboseClassnames:
-                __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames,
-            }),
-          [appendRule, options.__development__enableVerboseClassnames]
-        ),
-        __experimental__useCssTypedOm,
-      },
+        classes
+        // pseudoClassesToCacheValues: React.useCallback(
+        //   (
+        //     pseudoClasses,
+        //     { resolveStyle, __development__enableVerboseClassnames },
+        //   ) =>
+        //     pseudoClassesToCacheValues({
+        //       pseudoClasses,
+        //       cache: initialCache,
+        //       resolveStyle,
+        //       appendRule,
+        //       __development__enableVerboseClassnames:
+        //         __development__enableVerboseClassnames ??
+        //         options.__development__enableVerboseClassnames,
+        //     }),
+        //   [appendRule, options.__development__enableVerboseClassnames],
+        // ),
+        // mediaQueriesToCacheValues: React.useCallback(
+        //   (
+        //     mediaQueries,
+        //     { resolveStyle, __development__enableVerboseClassnames },
+        //   ) =>
+        //     mediaQueriesToCacheValues({
+        //       mediaQueries,
+        //       cache: initialCache,
+        //       resolveStyle,
+        //       appendRule,
+        //       __development__enableVerboseClassnames:
+        //         __development__enableVerboseClassnames ??
+        //         options.__development__enableVerboseClassnames,
+        //     }),
+        //   [appendRule, options.__development__enableVerboseClassnames],
+        // ),
+        // __experimental__useCssTypedOm,
+      }
     },
     children
   );

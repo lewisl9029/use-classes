@@ -1,1 +1,1 @@
-export { useStyles, StylesProvider } from "../../../../src/useStyles.js";
+export { useClasses, StylesProvider } from "../../../../src/useStyles.js";
