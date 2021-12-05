@@ -1866,6 +1866,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@lewisl9029/use-classes@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@lewisl9029/use-classes@workspace:."
+  dependencies:
+    csstype: ^3.0.10
+  languageName: unknown
+  linkType: soft
+
 "@lewisl9029/use-styles@npm:7.0.0":
   version: 7.0.0
   resolution: "@lewisl9029/use-styles@npm:7.0.0"
@@ -1874,14 +1882,6 @@ __metadata:
   checksum: 4af720b2e9f434739910a6ce16dd775557b0317a6874228caec76183a11355bc4fa13d2dd92fb281d2f58e609c2ccfd2c10a4e01d19019754c90b96466dcc456
   languageName: node
   linkType: hard
-
-"@lewisl9029/use-styles@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "@lewisl9029/use-styles@workspace:."
-  dependencies:
-    csstype: ^3.0.10
-  languageName: unknown
-  linkType: soft
 
 "@mrmlnc/readdir-enhanced@npm:^2.2.1":
   version: 2.2.1
