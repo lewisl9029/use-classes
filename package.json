@@ -1,11 +1,13 @@
 {
   "name": "@lewisl9029/use-classes",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Use classes",
   "repository": "https://github.com/lewisl9029/use-classes.git",
   "author": "Lewis Liu <lewisl9029@users.noreply.github.com>",
   "license": "MIT",
   "type": "module",
+  "main": "./src/standard/useClasses.js",
+  "types": "./src/standard/useClasses.d.ts",
   "exports": {
     ".": {
       "types": "./src/standard/useClasses.d.ts",
