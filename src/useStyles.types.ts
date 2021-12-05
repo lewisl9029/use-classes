@@ -17,15 +17,15 @@ export type Styles = Csstype.Properties<string | number, number>;
 /**
  * An object with pseudo class names as keys, and `Styles` objects as values.
  */
-export type PseudoClasses = { [_Key in `${Csstype.Pseudos}${string}`]: Styles };
+export type Pseudos = { [_Key in `${Csstype.Pseudos}${string}`]: Styles };
 
 /**
- * An object with media query strings as keys, and `Styles` or `PseudoClasses`
+ * An object with media query strings as keys, and `Styles` or `Pseudos`
  * objects as values.
  */
 export type MediaQueries =
   | {
-      [_Key in `@media ${string}`]: PseudoClasses | Styles;
+      [_Key in `@media ${string}`]: Pseudos | Styles;
     };
 
 /**
