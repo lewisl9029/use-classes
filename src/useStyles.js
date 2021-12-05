@@ -28,7 +28,7 @@ const measure = (name, fn) => fn();
 // TODO: explore manual looping
 const flatten = list => [].concat(...list);
 
-const cacheValuesToClassNames = cacheValues => {
+const cacheValuesToClasses = cacheValues => {
   let classNames = "";
   for (let index = 0; index < cacheValues.length; index++) {
     if (cacheValues[index] === undefined) {
@@ -43,7 +43,7 @@ const cacheValuesToClassNames = cacheValues => {
 // TODO: splitting this into 3 will probably result in faster checks, but maintenance burden probably won't be worth
 const styleToCacheValue = ({
   style,
-  pseudoClass,
+  pseudo,
   mediaQuery,
   cache,
   resolveStyle,
@@ -58,7 +58,7 @@ const styleToCacheValue = ({
     return undefined;
   }
 
-  const existingCacheValue = cache[mediaQuery]?.[pseudoClass]?.[name]?.[value];
+  const existingCacheValue = cache[mediaQuery]?.[pseudo]?.[name]?.[value];
 
   if (existingCacheValue) {
     return existingCacheValue;
@@ -67,11 +67,11 @@ const styleToCacheValue = ({
   if (!cache[mediaQuery]) {
     cache[mediaQuery] = {};
   }
-  if (!cache[mediaQuery][pseudoClass]) {
-    cache[mediaQuery][pseudoClass] = {};
+  if (!cache[mediaQuery][pseudo]) {
+    cache[mediaQuery][pseudo] = {};
   }
-  if (!cache[mediaQuery][pseudoClass][name]) {
-    cache[mediaQuery][pseudoClass][name] = {};
+  if (!cache[mediaQuery][pseudo][name]) {
+    cache[mediaQuery][pseudo][name] = {};
   }
 
   // This ends up happening during render. That sounds unsafe, but is actually
@@ -80,14 +80,14 @@ const styleToCacheValue = ({
   //
   // Should consider migrating to useInsertionEffect on react 18 though: https://github.com/reactwg/react-18/discussions/110
   return appendRule(
-    (cache[mediaQuery][pseudoClass][name][value] = {
+    (cache[mediaQuery][pseudo][name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
       className: __development__enableVerboseClassnames
         ? `r_${CSS.escape(
-            `${mediaQuery ?? "-"}_${pseudoClass ?? "-"}_${name}_${value}`
+            `${mediaQuery ?? "-"}_${pseudo ?? "-"}_${name}_${value}`
           ).replaceAll(/\\./g, "_")}`
-        : `r_${hash(`${mediaQuery}_${pseudoClass}_${name}_${value}`)}`,
-      pseudoClass,
+        : `r_${hash(`${mediaQuery}_${pseudo}_${name}_${value}`)}`,
+      pseudo,
       mediaQuery,
       name,
       value
@@ -122,9 +122,9 @@ const styleToCacheValue = ({
 //   )
 // }
 
-const stylesToCacheValues = ({
+const applyStyles = ({
   styles,
-  pseudoClass,
+  pseudo,
   mediaQuery,
   cache,
   resolveStyle,
@@ -139,7 +139,7 @@ const stylesToCacheValues = ({
 
     cacheValues[index] = styleToCacheValue({
       style: { name, value },
-      pseudoClass,
+      pseudo,
       mediaQuery,
       cache,
       resolveStyle,
@@ -180,56 +180,50 @@ export const useStyles = (
   //   );
   // }
 
-  const cacheValues = cache.stylesToCacheValues(styles, {
+  const cacheValues = cache.applyStyles(styles, {
     resolveStyle,
     __development__enableVerboseClassnames
   });
 
-  // const cacheValues = measure("stylesToCacheValues", () =>
+  // const cacheValues = measure("applyStyles", () =>
   //   React.useMemo(
-  //     () => stylesToCacheValues(Object.entries(styles), { resolveStyle }),
+  //     () => applyStyles(Object.entries(styles), { resolveStyle }),
   //     [styles, resolveStyle]
   //   )
   // );
 
   // const classNames = measure("classNames", () =>
   //   React.useMemo(() => {
-  //     return cacheValuesToClassNames(cacheValues);
+  //     return cacheValuesToClasses(cacheValues);
   //   }, [cacheValues])
   // );
 
-  return cacheValuesToClassNames(cacheValues);
-};
-
-export const useClasses = () => {
-  return React.useContext(cacheContext).classes;
+  return cacheValuesToClasses(cacheValues);
 };
 
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
-const pseudoClassesToCacheValues = ({
-  pseudoClasses,
+const applyPseudos = ({
+  pseudos,
   cache,
   resolveStyle,
   appendRule,
   __development__enableVerboseClassnames
 }) => {
-  const pseudoClassesEntries = Object.entries(pseudoClasses);
+  const pseudosEntries = Object.entries(pseudos);
 
   let cacheValues = [];
   for (
-    let pseudoClassesEntriesIndex = 0;
-    pseudoClassesEntriesIndex < pseudoClassesEntries.length;
-    pseudoClassesEntriesIndex++
+    let pseudosEntriesIndex = 0;
+    pseudosEntriesIndex < pseudosEntries.length;
+    pseudosEntriesIndex++
   ) {
-    const [pseudoClass, styles] = pseudoClassesEntries[
-      pseudoClassesEntriesIndex
-    ];
+    const [pseudo, styles] = pseudosEntries[pseudosEntriesIndex];
 
     cacheValues.push(
-      ...stylesToCacheValues({
+      ...applyStyles({
         styles,
-        pseudoClass,
+        pseudo,
         cache,
         resolveStyle,
         appendRule,
@@ -249,18 +243,18 @@ const pseudoClassesToCacheValues = ({
  * Call it with an object with pseudo class names as keys and CSS styles objects
  * as values, and pass the result to a `className` prop.
  *
- * @param { import("./useStyles.types").PseudoClasses } pseudoClasses
+ * @param { import("./useStyles.types").Pseudos } pseudos
  *
  * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
  *
  * @returns { string } A string with space separated css class names that can be
  * passed as-is into a className prop.
  *
- * Multiple calls to usePseudoClasses can also be joined together with `+`
+ * Multiple calls to usePseudos can also be joined together with `+`
  * thanks to the built-in trailing space.
  */
-export const usePseudoClasses = (
-  pseudoClasses,
+export const usePseudos = (
+  pseudos,
   { resolveStyle, __development__enableVerboseClassnames } = {}
 ) => {
   const cache = React.useContext(cacheContext);
@@ -271,7 +265,7 @@ export const usePseudoClasses = (
   //   );
   // }
 
-  const cacheValues = cache.pseudoClassesToCacheValues(pseudoClasses, {
+  const cacheValues = cache.applyPseudos(pseudos, {
     resolveStyle,
     __development__enableVerboseClassnames
   });
@@ -285,35 +279,35 @@ export const usePseudoClasses = (
 
   // const classNames = measure("classNames", () =>
   //   React.useMemo(() => {
-  //     return cacheValuesToClassNames(cacheValues);
+  //     return cacheValuesToClasses(cacheValues);
   //   }, [cacheValues])
   // );
 
-  return cacheValuesToClassNames(cacheValues);
+  return cacheValuesToClasses(cacheValues);
 };
 
-const stylesOrPseudoClassesToCacheValues = ({
-  stylesOrPseudoClasses,
+const applyStylesOrPseudos = ({
+  stylesOrPseudos,
   mediaQuery,
   cache,
   resolveStyle,
   appendRule,
   __development__enableVerboseClassnames
 }) => {
-  const stylesOrPseudoClassesEntries = Object.entries(stylesOrPseudoClasses);
+  const stylesOrPseudosEntries = Object.entries(stylesOrPseudos);
   // preallocate the array for original size of style entries to optimize for
-  // most common case where no pseudoclasses or media queries are present, so
+  // most common case where no pseudos or media queries are present, so
   // style & cache length are equal
-  let cacheValues = new Array(stylesOrPseudoClassesEntries.length);
+  let cacheValues = new Array(stylesOrPseudosEntries.length);
   let cacheValuesIndex = 0;
   // let cacheValues = [];
   for (
-    let stylesOrPseudoClassesEntriesIndex = 0;
-    stylesOrPseudoClassesEntriesIndex < stylesOrPseudoClassesEntries.length;
-    stylesOrPseudoClassesEntriesIndex++
+    let stylesOrPseudosEntriesIndex = 0;
+    stylesOrPseudosEntriesIndex < stylesOrPseudosEntries.length;
+    stylesOrPseudosEntriesIndex++
   ) {
-    const [entryName, entryValue] = stylesOrPseudoClassesEntries[
-      stylesOrPseudoClassesEntriesIndex
+    const [entryName, entryValue] = stylesOrPseudosEntries[
+      stylesOrPseudosEntriesIndex
     ];
 
     // startsWith might actually be faster than entryName[0] here!
@@ -329,7 +323,7 @@ const stylesOrPseudoClassesToCacheValues = ({
 
         cacheValues[cacheValuesIndex] = styleToCacheValue({
           style: { name, value },
-          pseudoClass: entryName,
+          pseudo: entryName,
           mediaQuery,
           cache,
           resolveStyle,
@@ -359,7 +353,7 @@ const stylesOrPseudoClassesToCacheValues = ({
 //
 // TODO: Many other at rules will need to be purpose built. For instance:
 // @keyframes names will become globally scoped, and has special structure
-const mediaQueriesToCacheValues = ({
+const applyMediaQueries = ({
   mediaQueries,
   cache,
   resolveStyle,
@@ -374,13 +368,13 @@ const mediaQueriesToCacheValues = ({
     mediaQueriesEntriesIndex++
   ) {
     const mediaQueriesEntry = mediaQueriesEntries[mediaQueriesEntriesIndex];
-    const [mediaQuery, stylesOrPseudoClasses] = mediaQueriesEntry;
+    const [mediaQuery, stylesOrPseudos] = mediaQueriesEntry;
 
     // This is probably slower than directly pushing each result, but I really
     // don't want to have to start sharing mutative counters
     cacheValues.push(
-      ...stylesOrPseudoClassesToCacheValues({
-        stylesOrPseudoClasses,
+      ...applyStylesOrPseudos({
+        stylesOrPseudos,
         mediaQuery,
         cache,
         resolveStyle,
@@ -421,7 +415,7 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
   //   );
   // }
 
-  const cacheValues = cache.mediaQueriesToCacheValues(mediaQueries, {
+  const cacheValues = cache.applyMediaQueries(mediaQueries, {
     resolveStyle
   });
 
@@ -434,11 +428,11 @@ export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
 
   // const classNames = measure("classNames", () =>
   //   React.useMemo(() => {
-  //     return cacheValuesToClassNames(cacheValues);
+  //     return cacheValuesToClasses(cacheValues);
   //   }, [cacheValues])
   // );
 
-  return cacheValuesToClassNames(cacheValues);
+  return cacheValuesToClasses(cacheValues);
 };
 
 export const StylesProvider = ({
@@ -484,7 +478,7 @@ export const StylesProvider = ({
   }, []);
 
   const appendRule = React.useCallback(cacheValue => {
-    const { className, pseudoClass = "", mediaQuery, name, value } = cacheValue;
+    const { className, pseudo = "", mediaQuery, name, value } = cacheValue;
     if (!stylesheetRef.current) {
       insertStylesheet();
     }
@@ -492,14 +486,14 @@ export const StylesProvider = ({
     // if (__experimental__useCssTypedOm) {
     //   // CSS Typed OM unfortunately doesn't deal with stylesheets yet, but supposedy it's coming:
     //   // https://github.com/w3c/css-houdini-drafts/issues/96#issuecomment-468063223
-    //   const rule = `.${className}${pseudoClass} {}`
+    //   const rule = `.${className}${pseudo} {}`
     //   const index = stylesheetRef.current.insertRule(
     //     mediaQuery ? `${mediaQuery} {${rule}}` : rule,
     //     stylesheetRef.current.cssRules.length,
     //   )
     //   stylesheetRef.current.cssRules[index].styleMap.set(name, value)
     // } else {
-    const rule = `.${className}${pseudoClass} { ${name}: ${value}; }`;
+    const rule = `.${className}${pseudo} { ${name}: ${value}; }`;
     stylesheetRef.current.insertRule(
       mediaQuery ? `${mediaQuery} {${rule}}` : rule,
       // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
@@ -510,66 +504,78 @@ export const StylesProvider = ({
     return cacheValue;
   }, []);
 
-  const classes = React.useCallback(
-    (styles, { resolveStyle, __development__enableVerboseClassnames } = {}) => {
-      const cacheValues = stylesToCacheValues({
-        styles,
-        cache: initialCache,
-        resolveStyle,
-        appendRule,
-        __development__enableVerboseClassnames:
-          __development__enableVerboseClassnames ??
-          // intentionally not including this dependency for perf
-          // TODO: let users know it requires a refresh
-          options.__development__enableVerboseClassnames
-      });
-
-      return cacheValuesToClassNames(cacheValues);
-    },
-    []
-  );
-
   return React.createElement(
     // TODO: split contexts
     cacheContext.Provider,
     {
       value: {
-        classes
-        // pseudoClassesToCacheValues: React.useCallback(
-        //   (
-        //     pseudoClasses,
-        //     { resolveStyle, __development__enableVerboseClassnames },
-        //   ) =>
-        //     pseudoClassesToCacheValues({
-        //       pseudoClasses,
-        //       cache: initialCache,
-        //       resolveStyle,
-        //       appendRule,
-        //       __development__enableVerboseClassnames:
-        //         __development__enableVerboseClassnames ??
-        //         options.__development__enableVerboseClassnames,
-        //     }),
-        //   [appendRule, options.__development__enableVerboseClassnames],
-        // ),
-        // mediaQueriesToCacheValues: React.useCallback(
-        //   (
-        //     mediaQueries,
-        //     { resolveStyle, __development__enableVerboseClassnames },
-        //   ) =>
-        //     mediaQueriesToCacheValues({
-        //       mediaQueries,
-        //       cache: initialCache,
-        //       resolveStyle,
-        //       appendRule,
-        //       __development__enableVerboseClassnames:
-        //         __development__enableVerboseClassnames ??
-        //         options.__development__enableVerboseClassnames,
-        //     }),
-        //   [appendRule, options.__development__enableVerboseClassnames],
-        // ),
-        // __experimental__useCssTypedOm,
+        classes: React.useCallback(
+          (
+            styles,
+            { resolveStyle, __development__enableVerboseClassnames } = {}
+          ) =>
+            cacheValuesToClasses(
+              applyStyles({
+                styles,
+                cache: initialCache,
+                resolveStyle,
+                appendRule,
+                __development__enableVerboseClassnames:
+                  __development__enableVerboseClassnames ??
+                  // intentionally not including this dependency for perf
+                  // TODO: let users know it requires a refresh
+                  options.__development__enableVerboseClassnames
+              })
+            ),
+          []
+        ),
+        classesForPseudos: React.useCallback(
+          (pseudos, { resolveStyle, __development__enableVerboseClassnames }) =>
+            cacheValuesToClasses(
+              applyPseudos({
+                pseudos,
+                cache: initialCache,
+                resolveStyle,
+                appendRule,
+                __development__enableVerboseClassnames:
+                  __development__enableVerboseClassnames ??
+                  options.__development__enableVerboseClassnames
+              })
+            ),
+          []
+        ),
+        classesForMediaQueries: React.useCallback(
+          (
+            mediaQueries,
+            { resolveStyle, __development__enableVerboseClassnames }
+          ) =>
+            cacheValuesToClasses(
+              applyMediaQueries({
+                mediaQueries,
+                cache: initialCache,
+                resolveStyle,
+                appendRule,
+                __development__enableVerboseClassnames:
+                  __development__enableVerboseClassnames ??
+                  options.__development__enableVerboseClassnames
+              })
+            ),
+          []
+        )
       }
     },
     children
   );
+};
+
+export const useClasses = () => {
+  return React.useContext(cacheContext).classes;
+};
+
+export const useClassesForPseudos = () => {
+  return React.useContext(cacheContext).classesForPseudos;
+};
+
+export const useClassesForMediaQueries = () => {
+  return React.useContext(cacheContext).classesForMediaQueries;
 };
