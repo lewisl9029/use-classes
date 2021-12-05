@@ -21,8 +21,8 @@
       }
     },
     {
-      "name": "use-styles-pub",
-      "url": "dist/index.html?library=use-styles-published&benchmark=deep",
+      "name": "use-classes-pub",
+      "url": "dist/index.html?library=use-classes-published&benchmark=deep",
       "measurement": "global",
       "browser": {
         "name": "chrome",
