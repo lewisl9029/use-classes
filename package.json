@@ -1,6 +1,6 @@
 {
   "name": "@lewisl9029/use-classes",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Use classes",
   "repository": "https://github.com/lewisl9029/use-classes.git",
   "author": "Lewis Liu <lewisl9029@users.noreply.github.com>",
@@ -8,20 +8,20 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./src/standard/useClasses.js",
-      "types": "./src/standard/useClasses.d.ts"
+      "types": "./src/standard/useClasses.d.ts",
+      "import": "./src/standard/useClasses.js"
     },
     "./themed": {
-      "import": "./src/themed/useClasses.js",
-      "types": "./src/themed/useClasses.d.ts"
+      "types": "./src/themed/useClasses.d.ts",
+      "import": "./src/themed/useClasses.js"
     },
     "./unitize": {
-      "import": "./src/unitize.js",
-      "types": "./src/unitize.d.ts"
+      "types": "./src/unitize.d.ts",
+      "import": "./src/unitize.js"
     },
     "./hyphenate": {
-      "import": "./src/hyphenate.js",
-      "types": "./src/hyphenate.d.ts"
+      "types": "./src/hyphenate.d.ts",
+      "import": "./src/hyphenate.js"
     }
   },
   "files": [
