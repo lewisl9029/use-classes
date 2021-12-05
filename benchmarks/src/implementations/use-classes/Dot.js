@@ -19,7 +19,7 @@ export default function Dot({ color, size, x, y }) {
         "border-bottom-width": `${size / 2}px`,
         "border-left-width": `${size / 2}px`,
         "margin-left": `${x}px`,
-        "margin-top": `${y}px`,
+        "margin-top": `${y}px`
       })}
       style={{ "border-bottom-color": color }}
     />
