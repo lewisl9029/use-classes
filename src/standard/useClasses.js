@@ -1,6 +1,6 @@
 import * as React from "react";
-import hash from "./useStyles/hash.js";
-import cacheContext from "./useStyles/cacheContext.js";
+import hash from "./hash.js";
+import cacheContext from "./cacheContext.js";
 
 // TODO: other perf explorations:
 //   - Preallocate array size where feasible
@@ -151,56 +151,6 @@ const applyStyles = ({
   return cacheValues;
 };
 
-/**
- * A low level building block to style React elements with great performance and
- * minimal indirection. Can also be composed into custom styling hooks using a
- * powerful style transform API.
- *
- * Call it with a CSS styles object and pass the result to a `className` prop.
- *
- * @param { import("./useStyles.types").Styles } styles
- *
- * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
- *
- * @returns { string } A string with space separated css class names that can be
- * passed as-is into a className prop.
- *
- * Multiple calls to useStyles can also be joined together with `+` thanks to the
- * built-in trailing space.
- */
-export const useStyles = (
-  styles,
-  { resolveStyle, __development__enableVerboseClassnames } = {}
-) => {
-  const cache = React.useContext(cacheContext);
-
-  // if (cache === undefined) {
-  //   throw new Error(
-  //     "Please ensure usages of useStyles are contained within StylesProvider"
-  //   );
-  // }
-
-  const cacheValues = cache.applyStyles(styles, {
-    resolveStyle,
-    __development__enableVerboseClassnames
-  });
-
-  // const cacheValues = measure("applyStyles", () =>
-  //   React.useMemo(
-  //     () => applyStyles(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     return cacheValuesToClasses(cacheValues);
-  //   }, [cacheValues])
-  // );
-
-  return cacheValuesToClasses(cacheValues);
-};
-
 // For psuedoclasses support, and potentially other features that live at this layer?
 // TODO: align terminology and structure with CSS syntax specs: https://developer.mozilla.org/en-US/docs/Web/CSS/Syntax
 const applyPseudos = ({
@@ -233,57 +183,6 @@ const applyPseudos = ({
   }
 
   return cacheValues;
-};
-
-/**
- * A low level building block to add pseudo classes to React elements with great
- * performance and minimal indirection. Can also be composed into custom styling
- * hooks using a powerful style transform API.
- *
- * Call it with an object with pseudo class names as keys and CSS styles objects
- * as values, and pass the result to a `className` prop.
- *
- * @param { import("./useStyles.types").Pseudos } pseudos
- *
- * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
- *
- * @returns { string } A string with space separated css class names that can be
- * passed as-is into a className prop.
- *
- * Multiple calls to usePseudos can also be joined together with `+`
- * thanks to the built-in trailing space.
- */
-export const usePseudos = (
-  pseudos,
-  { resolveStyle, __development__enableVerboseClassnames } = {}
-) => {
-  const cache = React.useContext(cacheContext);
-
-  // if (cache === undefined) {
-  //   throw new Error(
-  //     "Please ensure usages of useStyles are contained within StylesProvider"
-  //   );
-  // }
-
-  const cacheValues = cache.applyPseudos(pseudos, {
-    resolveStyle,
-    __development__enableVerboseClassnames
-  });
-
-  // const cacheValues = measure("toCacheValues", () =>
-  //   React.useMemo(
-  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     return cacheValuesToClasses(cacheValues);
-  //   }, [cacheValues])
-  // );
-
-  return cacheValuesToClasses(cacheValues);
 };
 
 const applyStylesOrPseudos = ({
@@ -387,54 +286,6 @@ const applyMediaQueries = ({
   return cacheValues;
 };
 
-/**
- * A low level building block to add media queries to React elements with great
- * performance and minimal indirection. Can also be composed into custom styling
- * hooks using a powerful style transform API.
- *
- * Call it with an object with media query strings as keys and CSS styles objects
- * as values, and pass the result to a `className` prop. Pseudoclasses can be
- * nested within as well.
- *
- * @param { import("./useStyles.types").MediaQueries } mediaQueries
- *
- * @param {{ resolveStyle: import("./useStyles.types").ResolveStyle }} options
- *
- * @returns { string } A string with space separated css class names that can be
- * passed as-is into a className prop.
- *
- * Multiple calls to useMediaQueries can also be joined together with `+`
- * thanks to the built-in trailing space.
- */
-export const useMediaQueries = (mediaQueries, { resolveStyle } = {}) => {
-  const cache = React.useContext(cacheContext);
-
-  // if (cache === undefined) {
-  //   throw new Error(
-  //     "Please ensure usages of useStyles are contained within StylesProvider"
-  //   );
-  // }
-
-  const cacheValues = cache.applyMediaQueries(mediaQueries, {
-    resolveStyle
-  });
-
-  // const cacheValues = measure("toCacheValues", () =>
-  //   React.useMemo(
-  //     () => toCacheValues(Object.entries(styles), { resolveStyle }),
-  //     [styles, resolveStyle]
-  //   )
-  // );
-
-  // const classNames = measure("classNames", () =>
-  //   React.useMemo(() => {
-  //     return cacheValuesToClasses(cacheValues);
-  //   }, [cacheValues])
-  // );
-
-  return cacheValuesToClasses(cacheValues);
-};
-
 export const StylesProvider = ({
   children,
   options = {},
@@ -449,7 +300,7 @@ export const StylesProvider = ({
   // )
 
   const insertStylesheet = React.useCallback(() => {
-    const id = `useStylesStylesheet`;
+    const id = `useClassesStylesheet`;
     const existingElement = window.document.getElementById(id);
 
     if (existingElement) {
@@ -568,14 +419,68 @@ export const StylesProvider = ({
   );
 };
 
+/**
+ * A low level building block to style React elements with great performance and
+ * minimal indirection. Can also be composed into custom styling hooks using a
+ * powerful style transform API.
+ *
+ * Call it with a CSS styles object and pass the result to a `className` prop.
+ *
+ * @param { import("./useClasses.types").Styles } styles
+ *
+ * @param {{ resolveStyle: import("./useClasses.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to useClasses can also be joined together with `+` thanks to the
+ * built-in trailing space.
+ */
 export const useClasses = () => {
   return React.useContext(cacheContext).classes;
 };
 
+/**
+ * A low level building block to add pseudo classes to React elements with great
+ * performance and minimal indirection. Can also be composed into custom styling
+ * hooks using a powerful style transform API.
+ *
+ * Call it with an object with pseudo class names as keys and CSS styles objects
+ * as values, and pass the result to a `className` prop.
+ *
+ * @param { import("./useClasses.types").Pseudos } pseudos
+ *
+ * @param {{ resolveStyle: import("./useClasses.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to usePseudos can also be joined together with `+`
+ * thanks to the built-in trailing space.
+ */
 export const useClassesForPseudos = () => {
   return React.useContext(cacheContext).classesForPseudos;
 };
 
+/**
+ * A low level building block to add media queries to React elements with great
+ * performance and minimal indirection. Can also be composed into custom styling
+ * hooks using a powerful style transform API.
+ *
+ * Call it with an object with media query strings as keys and CSS styles objects
+ * as values, and pass the result to a `className` prop. Pseudoclasses can be
+ * nested within as well.
+ *
+ * @param { import("./useClasses.types").MediaQueries } mediaQueries
+ *
+ * @param {{ resolveStyle: import("./useClasses.types").ResolveStyle }} options
+ *
+ * @returns { string } A string with space separated css class names that can be
+ * passed as-is into a className prop.
+ *
+ * Multiple calls to useMediaQueries can also be joined together with `+`
+ * thanks to the built-in trailing space.
+ */
 export const useClassesForMediaQueries = () => {
   return React.useContext(cacheContext).classesForMediaQueries;
 };

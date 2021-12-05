@@ -10,7 +10,7 @@ import * as Csstype from "csstype";
  * and have the units included automatically (see `./unitize`).
  *
  * You can even use styled-systems style theme shorthand values by composing
- * useStyles with a custom hook that reads those shorthands from your theme.
+ * useClasses with a custom hook that reads those shorthands from your theme.
  */
 export type Styles = Csstype.Properties<string | number, number>;
 

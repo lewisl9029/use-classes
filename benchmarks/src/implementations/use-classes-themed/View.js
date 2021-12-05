@@ -1,6 +1,6 @@
 // import styled from '@emotion/styled';
 import React from "react";
-import { useClasses } from "./useStyles.js";
+import { useClasses } from "./useClasses.js";
 
 export default function View({ className, ...props }) {
   return (

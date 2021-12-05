@@ -1,15 +1,16 @@
 {
-  "name": "@lewisl9029/use-styles",
-  "version": "7.0.0-dev",
-  "description": "Use styles",
-  "main": "src/useStyles.js",
-  "repository": "https://github.com/lewisl9029/use-styles.git",
+  "name": "@lewisl9029/use-classes",
+  "version": "0.0.0-dev",
+  "description": "Use classes",
+  "main": "src/standard/useClasses.js",
+  "repository": "https://github.com/lewisl9029/use-classes.git",
   "author": "Lewis Liu <lewisl9029@users.noreply.github.com>",
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/useStyles.js",
-    "./withUnit": "./src/withUnit.js",
+    ".": "./src/standard/useClasses.js",
+    "./themed": "./src/themed/useClasses.js",
+    "./unitize": "./src/unitize.js",
     "./hyphenate": "./src/hyphenate.js"
   },
   "files": [

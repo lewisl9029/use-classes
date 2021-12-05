@@ -1,5 +1,5 @@
 import React from "react";
-import { useClasses } from "./useStyles.js";
+import { useClasses } from "./useClasses.js";
 
 const styles = {
   outer: {

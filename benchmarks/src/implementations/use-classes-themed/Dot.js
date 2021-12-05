@@ -1,7 +1,7 @@
 // /* eslint-disable react/prop-types */
 // import styled from '@emotion/styled';
 import React from "react";
-import { useClasses } from "./useStyles.js";
+import { useClasses } from "./useClasses.js";
 
 export default function Dot({ color, size, x, y }) {
   return (
