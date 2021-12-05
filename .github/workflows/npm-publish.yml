@@ -7,7 +7,7 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     branches:
-      - master
+      - main
     # tags:
     #   - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
@@ -36,7 +36,6 @@ jobs:
       - run: yarn npm publish --access public --tolerate-republish
         env:
           YARN_NPM_AUTH_TOKEN: ${{secrets.npm_token}}
-
       # - uses: actions/create-release@v1
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
