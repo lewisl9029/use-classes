@@ -1,4 +1,4 @@
 export {
   useClasses,
   StylesProvider
-} from "../../../../src/standard/useClasses.js";
+} from "../../../../src/basic/useClasses.js";

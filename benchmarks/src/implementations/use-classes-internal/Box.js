@@ -3,34 +3,34 @@ import { useClasses } from "./useClasses.js";
 
 const styles = {
   outer: {
-    alignSelf: "flex-start",
-    padding: "4px"
+    "align-self": "flex-start",
+    padding: "4px",
   },
   row: {
-    flexDirection: "row"
+    "flex-direction": "row",
   },
   color0: {
-    backgroundColor: "#14171A"
+    "background-color": "#14171A",
   },
   color1: {
-    backgroundColor: "#AAB8C2"
+    "background-color": "#AAB8C2",
   },
   color2: {
-    backgroundColor: "#E6ECF0"
+    "background-color": "#E6ECF0",
   },
   color3: {
-    backgroundColor: "#FFAD1F"
+    "background-color": "#FFAD1F",
   },
   color4: {
-    backgroundColor: "#F45D22"
+    "background-color": "#F45D22",
   },
   color5: {
-    backgroundColor: "#E0245E"
+    "background-color": "#E0245E",
   },
   fixed: {
     width: "6px",
-    height: "6px"
-  }
+    height: "6px",
+  },
 };
 
 export default function Box({
@@ -43,24 +43,24 @@ export default function Box({
   return (
     <div
       className={useClasses()({
-        alignItems: "stretch",
-        borderWidth: "0",
-        borderStyle: "solid",
-        boxSizing: "border-box",
+        "align-items": "stretch",
+        "border-width": "0",
+        "border-style": "solid",
+        "box-sizing": "border-box",
         display: "flex",
-        flexBasis: "auto",
-        flexDirection: "column",
-        flexShrink: "0",
+        "flex-basis": "auto",
+        "flex-direction": "column",
+        "flex-shrink": "0",
         margin: "0",
         padding: "0",
         position: "relative",
         // fix flexbox bugs
-        minHeight: "0",
-        minWidth: "0",
-        backgroundColor: theme => theme[`color${color}`],
+        "min-height": "0",
+        "min-width": "0",
+        ...styles[`color${color}`],
         ...(fixed ? styles.fixed : {}),
         ...(layout === "row" ? styles.row : {}),
-        ...(outer ? styles.outer : {})
+        ...(outer ? styles.outer : {}),
       })}
       {...{ color, fixed, layout, outer, ...props }}
     />

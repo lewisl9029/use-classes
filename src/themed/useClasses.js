@@ -1,17 +1,26 @@
-import * as useClassesStandard from "../standard/useClasses.js";
+import * as useClassesInternal from "../internal/useClasses.js";
 import * as React from "react";
+import * as hyphenate from "../internal/hyphenate.js";
+import * as unitize from "../internal/unitize.js";
 
-const resolveStyleThemed = theme => {
+const hyphenateAndUnitize = ({ name, value }) => {
+  return {
+    name: hyphenate.hyphenate(name),
+    value: unitize.unitize(name, value)
+  };
+};
+
+const resolveStyleFromTheme = theme => {
   return style => {
     if (typeof style.value !== "function") {
-      return style;
+      return hyphenateAndUnitize(style);
     }
 
     // @ts-ignore
-    return {
+    return hyphenateAndUnitize({
       name: style.name,
       value: style.value(theme)
-    };
+    });
   };
 };
 
@@ -46,42 +55,27 @@ const resolveStyleThemed = theme => {
 // }
 
 export const useClasses = theme => {
-  const classes = useClassesStandard.useClasses();
+  const classes = useClassesInternal.useClasses();
   return React.useCallback(
-    (styles, { resolveStyle } = {}) =>
-      classes(styles, {
-        resolveStyle: resolveStyle
-          ? style => resolveStyle(resolveStyleThemed(theme)(style))
-          : resolveStyleThemed(theme)
-      }),
+    styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
   );
 };
 
 export const useClassesForPseudos = theme => {
-  const classes = useClassesStandard.useClassesForPseudos();
+  const classes = useClassesInternal.useClassesForPseudos();
   return React.useCallback(
-    (styles, { resolveStyle } = {}) =>
-      classes(styles, {
-        resolveStyle: resolveStyle
-          ? style => resolveStyle(resolveStyleThemed(theme)(style))
-          : resolveStyleThemed(theme)
-      }),
+    styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
   );
 };
 
 export const useClassesForMediaQueries = theme => {
-  const classes = useClassesStandard.useClassesForMediaQueries();
+  const classes = useClassesInternal.useClassesForMediaQueries();
   return React.useCallback(
-    (styles, { resolveStyle } = {}) =>
-      classes(styles, {
-        resolveStyle: resolveStyle
-          ? style => resolveStyle(resolveStyleThemed(theme)(style))
-          : resolveStyleThemed(theme)
-      }),
+    styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
   );
 };
 
-export { StylesProvider } from "../standard/useClasses.js";
+export { StylesProvider } from "../internal/useClasses.js";
