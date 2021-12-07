@@ -1,26 +1,17 @@
-import * as useClassesInternal from "../internal/useClasses.js";
+import * as useClassesBasic from "../basic/useClasses.js";
 import * as React from "react";
-import * as hyphenate from "../internal/hyphenate.js";
-import * as unitize from "../internal/unitize.js";
-
-const hyphenateAndUnitize = ({ name, value }) => {
-  return {
-    name: hyphenate.hyphenate(name),
-    value: unitize.unitize(name, value)
-  };
-};
 
 const resolveStyleFromTheme = theme => {
   return style => {
     if (typeof style.value !== "function") {
-      return hyphenateAndUnitize(style);
+      return style;
     }
 
     // @ts-ignore
-    return hyphenateAndUnitize({
+    return {
       name: style.name,
       value: style.value(theme)
-    });
+    };
   };
 };
 
@@ -55,7 +46,7 @@ const resolveStyleFromTheme = theme => {
 // }
 
 export const useClasses = theme => {
-  const classes = useClassesInternal.useClasses();
+  const classes = useClassesBasic.useClasses();
   return React.useCallback(
     styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
@@ -63,7 +54,7 @@ export const useClasses = theme => {
 };
 
 export const useClassesForPseudos = theme => {
-  const classes = useClassesInternal.useClassesForPseudos();
+  const classes = useClassesBasic.useClassesForPseudos();
   return React.useCallback(
     styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
@@ -71,11 +62,11 @@ export const useClassesForPseudos = theme => {
 };
 
 export const useClassesForMediaQueries = theme => {
-  const classes = useClassesInternal.useClassesForMediaQueries();
+  const classes = useClassesBasic.useClassesForMediaQueries();
   return React.useCallback(
     styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
   );
 };
 
-export { StylesProvider } from "../internal/useClasses.js";
+export { StylesProvider } from "../basic/useClasses.js";

@@ -29,3 +29,5 @@ export const hyphenate = name => {
         .replace(msPattern, "-ms-")
     : name;
 };
+
+export default hyphenate;
