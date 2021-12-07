@@ -11,17 +11,17 @@ export default function Dot({ color, size, x, y }) {
         cursor: "pointer",
         width: "0",
         height: "0",
-        borderColor: "transparent",
-        borderStyle: "solid",
-        borderTopWidth: "0",
+        "border-color": "transparent",
+        "border-style": "solid",
+        "border-top-width": "0",
         transform: "translate(50%, 50%)",
-        borderRightWidth: `${size / 2}px`,
-        borderBottomWidth: `${size / 2}px`,
-        borderLeftWidth: `${size / 2}px`,
-        marginLeft: `${x}px`,
-        marginTop: `${y}px`
+        "border-right-width": `${size / 2}px`,
+        "border-bottom-width": `${size / 2}px`,
+        "border-left-width": `${size / 2}px`,
+        "margin-left": `${x}px`,
+        "margin-top": `${y}px`
       })}
-      style={{ borderBottomColor: color }}
+      style={{ "border-bottom-color": color }}
     />
   );
 }

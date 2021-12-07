@@ -2,29 +2,10 @@ import * as Csstype from "csstype";
 import * as React from 'react';
 
 /**
- * An object with hyphenated CSS property names as keys, and CSS property value
- * strings as values. Maps exactly to what you'd write in an actual CSS
- * stylesheet (and to objects accepted by CSS Typed OM in the future).
- *
- * Supply a {@link ResolveStyle} function in {@link Classes}'s `options` arg if
- * you'd like to use camelCased style names (can be implemented with
- * `./hyphenate`) and/or use number values and/or have the units included
- * automatically (see `./unitize`).
+ * An object with camel-cased CSS property names as keys, and CSS property values 
+ * as values.
  */
-type Styles = Csstype.Properties;
-
-/**
- * Can be supplied to transform a style name and value into any other arbitrary form.
- *
- * Some common use cases:
- *   - Hyphenating camelCased property names
- *   - Adding units to unitless number values
- *   - Resolving a style value from a theme
- */
-type ResolveStyle = ({ name, value }: { name: string; value: any }) => {
-  name: string;
-  value: any;
-};
+type Styles = Csstype.Properties<string | number, number>;
 
 /**
  * A string of css class names to pass in to className prop of any element.
@@ -41,17 +22,13 @@ type ClassNames = string
  * Multiple calls to `classes` and its variants can be concatenated together
  * with `+` thanks to the built-in trailing space.
  */
-type Classes = (styles: Styles, options: { resolveStyle: ResolveStyle }) => ClassNames
+type Classes = (styles: Styles) => ClassNames
 
 /**
  * A low level building block to style React elements with great performance and
  * minimal indirection.
- *
- * Can also be composed into custom styling hooks using a powerful style
- * transform API. See @lewisl9029/use-classes/themed for an example of this.
  */
 export function useClasses(): Classes
-
 
 /**
  * An object with pseudo classes/elements as keys, and {@link Styles} objects as values.
@@ -65,7 +42,7 @@ export function useClasses(): Classes
  * {@link Styles} objects as values, and returns a {@link ClassNames} string
  * that can be passed directly into a `className` prop on any element.
  */
- type ClassesForPseudos = (styles: Pseudos, options: { resolveStyle: ResolveStyle }) => ClassNames
+ type ClassesForPseudos = (styles: Pseudos) => ClassNames
 
 /**
  * A variant of {@link useClasses} used for pseudo classes/elements.
@@ -89,7 +66,7 @@ export function useClassesForPseudos(): ClassesForPseudos
  * {@link ClassNames} string that can be passed directly into a `className` prop
  * on any element.
  */
- type ClassesForMediaQueries = (styles: Pseudos, options: { resolveStyle: ResolveStyle }) => ClassNames
+ type ClassesForMediaQueries = (styles: Pseudos) => ClassNames
 
 /**
  * A variant of {@link useClasses} used for pseudo classes/elements.
