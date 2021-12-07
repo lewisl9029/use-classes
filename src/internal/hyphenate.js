@@ -22,10 +22,10 @@ const prefixAndLowerCase = char => `-${char.toLowerCase()}`;
  * As Modernizr suggests (http://modernizr.com/docs/#prefixed), an `ms` prefix
  * is converted to `-ms-`.
  */
-export default function hyphenateStyleName(string) {
-  return uppercaseCheck.test(string)
-    ? string
+export const hyphenate = name => {
+  return uppercaseCheck.test(name)
+    ? name
         .replace(uppercasePattern, prefixAndLowerCase)
         .replace(msPattern, "-ms-")
-    : string;
-}
+    : name;
+};
