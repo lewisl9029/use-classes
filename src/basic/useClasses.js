@@ -102,6 +102,9 @@ const styleToCacheValue = ({
   );
 };
 
+// TODO: explore using persistent collections for perf. There will be overhead
+// in conversion, but value equality semantics could give us massive savings
+// compared to having to iterate over everything deeply making tons of checks.
 const applyStyles = ({
   styles,
   pseudo,
