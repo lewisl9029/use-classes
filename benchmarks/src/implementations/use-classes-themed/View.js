@@ -8,19 +8,19 @@ export default function View({ className, ...props }) {
       {...props}
       className={useClasses()({
         alignItems: "stretch",
-        borderWidth: "0",
+        borderWidth: 0,
         borderStyle: "solid",
         boxSizing: "border-box",
         display: "flex",
         flexBasis: "auto",
         flexDirection: "column",
-        flexShrink: "0",
-        margin: "0",
-        padding: "0",
+        flexShrink: 0,
+        margin: 0,
+        padding: 0,
         position: "relative",
         // fix flexbox bugs
-        minHeight: "0",
-        minWidth: "0"
+        minHeight: 0,
+        minWidth: 0
       })}
     />
   );

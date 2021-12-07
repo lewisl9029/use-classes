@@ -7,20 +7,20 @@ export default function View({ className, ...props }) {
     <div
       {...props}
       className={useClasses()({
-        "align-items": "stretch",
-        "border-width": "0",
-        "border-style": "solid",
-        "box-sizing": "border-box",
+        alignItems: "stretch",
+        borderWidth: 0,
+        borderStyle: "solid",
+        boxSizing: "border-box",
         display: "flex",
-        "flex-basis": "auto",
-        "flex-direction": "column",
-        "flex-shrink": "0",
-        margin: "0",
-        padding: "0",
+        flexBasis: "auto",
+        flexDirection: "column",
+        flexShrink: 0,
+        margin: 0,
+        padding: 0,
         position: "relative",
         // fix flexbox bugs
-        "min-height": "0",
-        "min-width": "0",
+        minHeight: 0,
+        minWidth: 0
       })}
     />
   );

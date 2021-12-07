@@ -9,19 +9,19 @@ export default function Dot({ color, size, x, y }) {
       className={useClasses()({
         position: "absolute",
         cursor: "pointer",
-        width: "0",
-        height: "0",
-        "border-color": "transparent",
-        "border-style": "solid",
-        "border-top-width": "0",
+        width: 0,
+        height: 0,
+        borderColor: "transparent",
+        borderStyle: "solid",
+        borderTopWidth: 0,
         transform: "translate(50%, 50%)",
-        "border-right-width": `${size / 2}px`,
-        "border-bottom-width": `${size / 2}px`,
-        "border-left-width": `${size / 2}px`,
-        "margin-left": `${x}px`,
-        "margin-top": `${y}px`
+        borderRightWidth: size / 2,
+        borderBottomWidth: size / 2,
+        borderLeftWidth: size / 2,
+        marginLeft: x,
+        marginTop: y
       })}
-      style={{ "border-bottom-color": color }}
+      style={{ borderBottomColor: color }}
     />
   );
 }

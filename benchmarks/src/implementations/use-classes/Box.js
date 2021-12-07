@@ -4,7 +4,7 @@ import { useClasses } from "./useClasses.js";
 const styles = {
   outer: {
     alignSelf: "flex-start",
-    padding: "4px"
+    padding: 4
   },
   row: {
     flexDirection: "row"
@@ -28,8 +28,8 @@ const styles = {
     backgroundColor: "#E0245E"
   },
   fixed: {
-    width: "6px",
-    height: "6px"
+    width: 6,
+    height: 6
   }
 };
 
@@ -44,19 +44,19 @@ export default function Box({
     <div
       className={useClasses()({
         alignItems: "stretch",
-        borderWidth: "0",
+        borderWidth: 0,
         borderStyle: "solid",
         boxSizing: "border-box",
         display: "flex",
         flexBasis: "auto",
         flexDirection: "column",
-        flexShrink: "0",
-        margin: "0",
-        padding: "0",
+        flexShrink: 0,
+        margin: 0,
+        padding: 0,
         position: "relative",
         // fix flexbox bugs
-        minHeight: "0",
-        minWidth: "0",
+        minHeight: 0,
+        minWidth: 0,
         ...styles[`color${color}`],
         ...(fixed ? styles.fixed : {}),
         ...(layout === "row" ? styles.row : {}),
