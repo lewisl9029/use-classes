@@ -1866,7 +1866,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lewisl9029/use-classes@0.0.6, @lewisl9029/use-classes@workspace:.":
+"@lewisl9029/use-classes@npm:0.0.6":
+  version: 0.0.6
+  resolution: "@lewisl9029/use-classes@npm:0.0.6"
+  dependencies:
+    csstype: ^3.0.10
+  checksum: 5b1a3134c7346b47ca7976d8d663e2882c4a710724ae1489adc22cae9e84880a23e768e76db4726c36920a32b9641cf4e5f72cec16aa2cc64d73da4ec4086152
+  languageName: node
+  linkType: hard
+
+"@lewisl9029/use-classes@workspace:.":
   version: 0.0.0-use.local
   resolution: "@lewisl9029/use-classes@workspace:."
   dependencies:
