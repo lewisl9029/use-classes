@@ -279,26 +279,15 @@ const keyframesToCacheValue = ({
   appendKeyframes,
   __development__enableVerboseClassnames
 }) => {
-  const blocksEntries = Object.entries(keyframes);
-
   let content = "";
 
-  for (
-    let blocksEntriesIndex = 0;
-    blocksEntriesIndex < blocksEntries.length;
-    blocksEntriesIndex++
-  ) {
-    const [selector, declarations] = blocksEntries[blocksEntriesIndex];
+  for (const selector in keyframes) {
+    const declarations = keyframes[selector];
 
     content = content + `${selector}{`;
 
-    const declarationsEntries = Object.entries(declarations);
-    for (
-      let declarationsEntriesIndex = 0;
-      declarationsEntriesIndex < declarationsEntries.length;
-      declarationsEntriesIndex++
-    ) {
-      const [name, value] = declarationsEntries[declarationsEntriesIndex];
+    for (const name in declarations) {
+      const value = declarations[name];
       content = content + `${hyphenate(name)}:${unitize(value)};`;
     }
 
