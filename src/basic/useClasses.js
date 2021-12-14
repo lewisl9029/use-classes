@@ -9,8 +9,14 @@ import cacheContext from "./cacheContext.js";
 //   - More low-level caching and memoization
 //   - For.. of/in.. loops instead of entries then looping?
 
-const defaultCache = {};
-const defaultKeyframesCache = {};
+const defaultCache = {
+  hyphenate: {},
+  unitize: {},
+  styles: {},
+  pseudos: {},
+  mediaQueries: {},
+  keyframes: {}
+};
 
 // const measure = (name, fn) => {
 //   window.performance.mark(`${name}_start`)
@@ -68,20 +74,21 @@ const styleToCacheValue = ({
     return undefined;
   }
 
-  const existingCacheValue = cache[mediaQuery]?.[pseudo]?.[name]?.[value];
+  const existingCacheValue =
+    cache.styles[mediaQuery]?.[pseudo]?.[name]?.[value];
 
   if (existingCacheValue) {
     return existingCacheValue;
   }
 
-  if (!cache[mediaQuery]) {
-    cache[mediaQuery] = {};
+  if (!cache.styles[mediaQuery]) {
+    cache.styles[mediaQuery] = {};
   }
-  if (!cache[mediaQuery][pseudo]) {
-    cache[mediaQuery][pseudo] = {};
+  if (!cache.styles[mediaQuery][pseudo]) {
+    cache.styles[mediaQuery][pseudo] = {};
   }
-  if (!cache[mediaQuery][pseudo][name]) {
-    cache[mediaQuery][pseudo][name] = {};
+  if (!cache.styles[mediaQuery][pseudo][name]) {
+    cache.styles[mediaQuery][pseudo][name] = {};
   }
 
   // This ends up happening during render. That sounds unsafe, but is actually
@@ -91,7 +98,7 @@ const styleToCacheValue = ({
   // Actually tried benchmarking with useInsertionEffect in React 18, but it
   // turned out to be slower: https://github.com/lewisl9029/use-styles/pull/25
   return appendRule(
-    (cache[mediaQuery][pseudo][name][value] = {
+    (cache.styles[mediaQuery][pseudo][name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
       className: __development__enableVerboseClassnames
         ? `r_${escapeCssName(
@@ -100,8 +107,8 @@ const styleToCacheValue = ({
         : `r_${hash(`${mediaQuery}_${pseudo}_${name}_${value}`)}`,
       pseudo,
       mediaQuery,
-      name: hyphenate(name),
-      value: unitize(name, value)
+      name: hyphenate(name, { cache: cache.hyphenate }),
+      value: unitize(name, value, { cache: cache.unitize })
     })
   );
 };
@@ -237,8 +244,7 @@ const applyStylesOrPseudos = ({
 
 // For at rules, currently only @media.
 //
-// TODO: Many other at rules will need to be purpose built. For instance:
-// @keyframes names will become globally scoped, and has special structure
+// TODO: Many other at rules will need to be purpose built, like @keyframes below.
 const applyMediaQueries = ({
   mediaQueries,
   cache,
@@ -273,6 +279,14 @@ const applyMediaQueries = ({
   return cacheValues;
 };
 
+// This is a good 50% ish slower than the single style approaches above. We
+// can't really use a single style approach for this because keyframes don't
+// cascade, and only the last seen keyframe gets applied:
+// https://developer.mozilla.org/en-US/docs/Web/CSS/@keyframes#resolving_duplicates
+//
+// Though I think it should be possible to optimize this further, since emotion
+// & styled components also hash an entire object instead of each single style,
+// which is basically what we're doing here.
 const keyframesToCacheValue = ({
   keyframes,
   cache,
@@ -285,32 +299,31 @@ const keyframesToCacheValue = ({
   for (const selector in keyframes) {
     const declarations = keyframes[selector];
 
-    content = content + `${selector}{`;
+    content += `${selector}{`;
 
     for (const name in declarations) {
       const value = declarations[name];
       const resolvedStyle = resolveStyle?.({ name, value }) ?? { name, value };
-      content =
-        content +
-        `${hyphenate(resolvedStyle.name)}:${unitize(
-          resolvedStyle.name,
-          resolvedStyle.value
-        )};`;
+      content += `${hyphenate(resolvedStyle.name, {
+        cache: cache.hyphenate
+      })}:${unitize(resolvedStyle.name, resolvedStyle.value, {
+        cache: cache.unitize
+      })};`;
     }
 
-    content = content + "}";
+    content += "}";
   }
 
   const name = __development__enableVerboseClassnames
     ? `r_k_${escapeCssName(content)}`
     : `r_k_${hash(content)}`;
 
-  if (cache[name]) {
-    return cache[name];
+  if (cache.keyframes[name]) {
+    return cache.keyframes[name];
   }
 
-  cache[name] = { name, content };
-  return appendKeyframes(cache[name]);
+  cache.keyframes[name] = { name, content };
+  return appendKeyframes(cache.keyframes[name]);
 };
 
 const applyKeyframes = ({
@@ -333,9 +346,7 @@ export const StylesProvider = ({
   children,
   options = {},
   // TODO: cache import/export
-  initialCache = defaultCache,
-  // TODO: introduce another layer instead of separate cache props?
-  initialKeyframesCache = defaultKeyframesCache
+  initialCache = defaultCache
 }) => {
   const stylesheetRef = React.useRef();
 
@@ -472,7 +483,7 @@ export const StylesProvider = ({
           ) =>
             applyKeyframes({
               keyframes,
-              cache: initialKeyframesCache,
+              cache: initialCache,
               resolveStyle,
               appendKeyframes,
               __development__enableVerboseClassnames:

@@ -69,9 +69,15 @@ export function useClassesForPseudos(): ClassesForPseudos
  type ClassesForMediaQueries = (styles: Pseudos) => ClassNames
 
 /**
- * A variant of {@link useClasses} used for pseudo classes/elements.
+ * A variant of {@link useClasses} used for media queries.
  */
 export function useClassesForMediaQueries(): ClassesForMediaQueries
+
+type KeyframesName = string
+
+type Keyframes = (keyframes: { [selector: string]: Styles }) => KeyframesName
+
+export function useKeyframes(): Keyframes
 
 /**
  * Provides a centralized cache and global options to downstream useClasses hooks.

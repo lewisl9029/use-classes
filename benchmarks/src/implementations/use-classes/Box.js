@@ -43,7 +43,7 @@ export default function Box({
 }) {
   const animationName = useKeyframes()({
     from: {
-      opacity: 0
+      opacity: 1
     },
     to: {
       opacity: 1
@@ -67,9 +67,8 @@ export default function Box({
         minHeight: 0,
         minWidth: 0,
         ...styles[`color${color}`],
-        backgroundColor: "pink",
         animationName,
-        animationDuration: "2s",
+        animationDuration: 0,
         ...(fixed ? styles.fixed : {}),
         ...(layout === "row" ? styles.row : {}),
         ...(outer ? styles.outer : {})

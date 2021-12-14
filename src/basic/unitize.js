@@ -49,16 +49,26 @@ let unitlessKeys = {
 };
 
 // Taken from https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/react-dom/src/shared/dangerousStyleValue.js
-export const unitize = (name, value) => {
+export const unitize = (name, value, { cache }) => {
+  let cachedName = cache[name];
+  if (!cachedName) {
+    cachedName = cache[name] = {};
+  }
+
+  const cachedValue = cachedName[value];
+  if (cachedValue) {
+    return cachedValue;
+  }
+
   if (value == null || typeof value === "boolean" || value === "") {
-    return "";
+    return (cachedName[value] = "");
   }
 
   if (typeof value === "number" && value !== 0 && !unitlessKeys[name]) {
-    return `${value}px`; // Presumes implicit 'px' suffix for unitless numbers
+    return (cachedName[value] = `${value}px`); // Presumes implicit 'px' suffix for unitless numbers
   }
 
-  return String(value).trim();
+  return (cachedName[value] = String(value).trim());
 };
 
 export default unitize;
