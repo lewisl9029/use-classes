@@ -1,4 +1,5 @@
 import React from "react";
+import { useKeyframes } from "../../../../src/basic/useClasses.js";
 import { useClasses } from "./useClasses.js";
 
 const styles = {
@@ -40,6 +41,14 @@ export default function Box({
   outer = false,
   ...props
 }) {
+  const animationName = useKeyframes()({
+    from: {
+      opacity: 0
+    },
+    to: {
+      opacity: 1
+    }
+  });
   return (
     <div
       className={useClasses()({
@@ -58,6 +67,9 @@ export default function Box({
         minHeight: 0,
         minWidth: 0,
         ...styles[`color${color}`],
+        backgroundColor: "pink",
+        animationName,
+        animationDuration: "2s",
         ...(fixed ? styles.fixed : {}),
         ...(layout === "row" ? styles.row : {}),
         ...(outer ? styles.outer : {})

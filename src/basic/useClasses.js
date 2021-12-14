@@ -7,8 +7,10 @@ import cacheContext from "./cacheContext.js";
 // TODO: other perf explorations:
 //   - Preallocate array size where feasible
 //   - More low-level caching and memoization
+//   - For.. of/in.. loops instead of entries then looping?
 
 const defaultCache = {};
+const defaultKeyframesCache = {};
 
 // const measure = (name, fn) => {
 //   window.performance.mark(`${name}_start`)
@@ -29,6 +31,8 @@ const measure = (name, fn) => fn();
 // Significantly more performant than `list.flat()`: https://stackoverflow.com/a/61416753
 // TODO: explore manual looping
 const flatten = list => [].concat(...list);
+
+const escapeCssName = string => CSS.escape(string).replaceAll(/\\./g, "_");
 
 const cacheValuesToClasses = cacheValues => {
   let classNames = "";
@@ -90,9 +94,9 @@ const styleToCacheValue = ({
     (cache[mediaQuery][pseudo][name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
       className: __development__enableVerboseClassnames
-        ? `r_${CSS.escape(
+        ? `r_${escapeCssName(
             `${mediaQuery ?? "-"}_${pseudo ?? "-"}_${name}_${value}`
-          ).replaceAll(/\\./g, "_")}`
+          )}`
         : `r_${hash(`${mediaQuery}_${pseudo}_${name}_${value}`)}`,
       pseudo,
       mediaQuery,
@@ -269,11 +273,71 @@ const applyMediaQueries = ({
   return cacheValues;
 };
 
+const keyframesToCacheValue = ({
+  keyframes,
+  cache,
+  appendKeyframes,
+  __development__enableVerboseClassnames
+}) => {
+  const blocksEntries = Object.entries(keyframes);
+
+  let content = "";
+
+  for (
+    let blocksEntriesIndex = 0;
+    blocksEntriesIndex < blocksEntries.length;
+    blocksEntriesIndex++
+  ) {
+    const [selector, declarations] = blocksEntries[blocksEntriesIndex];
+
+    content = content + `${selector}{`;
+
+    const declarationsEntries = Object.entries(declarations);
+    for (
+      let declarationsEntriesIndex = 0;
+      declarationsEntriesIndex < declarationsEntries.length;
+      declarationsEntriesIndex++
+    ) {
+      const [name, value] = declarationsEntries[declarationsEntriesIndex];
+      content = content + `${hyphenate(name)}:${unitize(value)};`;
+    }
+
+    content = content + "}";
+  }
+
+  const name = __development__enableVerboseClassnames
+    ? `r_k_${escapeCssName(content)}`
+    : `r_k_${hash(content)}`;
+
+  if (cache[name]) {
+    return cache[name];
+  }
+
+  cache[name] = { name, content };
+  return appendKeyframes(cache[name]);
+};
+
+const applyKeyframes = ({
+  keyframes,
+  cache,
+  appendKeyframes,
+  __development__enableVerboseClassnames
+}) => {
+  return keyframesToCacheValue({
+    keyframes,
+    cache,
+    appendKeyframes,
+    __development__enableVerboseClassnames
+  });
+};
+
 export const StylesProvider = ({
   children,
   options = {},
   // TODO: cache import/export
-  initialCache = defaultCache
+  initialCache = defaultCache,
+  // TODO: introduce another layer instead of separate cache props?
+  initialKeyframesCache = defaultKeyframesCache
 }) => {
   const stylesheetRef = React.useRef();
 
@@ -312,7 +376,7 @@ export const StylesProvider = ({
       insertStylesheet();
     }
 
-    const rule = `.${className}${pseudo} { ${name}: ${value}; }`;
+    const rule = `.${className}${pseudo} {${name}:${value};}`;
     stylesheetRef.current.insertRule(
       mediaQuery ? `${mediaQuery} {${rule}}` : rule,
       // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
@@ -323,6 +387,24 @@ export const StylesProvider = ({
     // }
     return cacheValue;
   }, []);
+
+  // TODO: we should really split the other caches too for perf, would
+  // significantly reduce cache depth and the number of checks for base case
+  const appendKeyframes = React.useCallback(keyframesCacheValue => {
+    const { name, content } = keyframesCacheValue;
+    if (!stylesheetRef.current) {
+      insertStylesheet();
+    }
+
+    const rule = `@keyframes ${name} {${content}}`;
+
+    stylesheetRef.current.insertRule(
+      rule,
+      stylesheetRef.current.cssRules.length
+    );
+    // }
+    return keyframesCacheValue;
+  });
 
   return React.createElement(
     // TODO: split contexts
@@ -350,7 +432,10 @@ export const StylesProvider = ({
           []
         ),
         classesForPseudos: React.useCallback(
-          (pseudos, { resolveStyle, __development__enableVerboseClassnames }) =>
+          (
+            pseudos,
+            { resolveStyle, __development__enableVerboseClassnames } = {}
+          ) =>
             cacheValuesToClasses(
               applyPseudos({
                 pseudos,
@@ -367,7 +452,7 @@ export const StylesProvider = ({
         classesForMediaQueries: React.useCallback(
           (
             mediaQueries,
-            { resolveStyle, __development__enableVerboseClassnames }
+            { resolveStyle, __development__enableVerboseClassnames } = {}
           ) =>
             cacheValuesToClasses(
               applyMediaQueries({
@@ -380,6 +465,18 @@ export const StylesProvider = ({
                   options.__development__enableVerboseClassnames
               })
             ),
+          []
+        ),
+        keyframes: React.useCallback(
+          (keyframes, { __development__enableVerboseClassnames } = {}) =>
+            applyKeyframes({
+              keyframes,
+              cache: initialKeyframesCache,
+              appendKeyframes,
+              __development__enableVerboseClassnames:
+                __development__enableVerboseClassnames ??
+                options.__development__enableVerboseClassnames
+            }).name,
           []
         )
       }
@@ -398,4 +495,8 @@ export const useClassesForPseudos = () => {
 
 export const useClassesForMediaQueries = () => {
   return React.useContext(cacheContext).classesForMediaQueries;
+};
+
+export const useKeyframes = () => {
+  return React.useContext(cacheContext).keyframes;
 };
