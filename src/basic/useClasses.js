@@ -276,6 +276,7 @@ const applyMediaQueries = ({
 const keyframesToCacheValue = ({
   keyframes,
   cache,
+  resolveStyle,
   appendKeyframes,
   __development__enableVerboseClassnames
 }) => {
@@ -288,7 +289,13 @@ const keyframesToCacheValue = ({
 
     for (const name in declarations) {
       const value = declarations[name];
-      content = content + `${hyphenate(name)}:${unitize(value)};`;
+      const resolvedStyle = resolveStyle?.({ name, value }) ?? { name, value };
+      content =
+        content +
+        `${hyphenate(resolvedStyle.name)}:${unitize(
+          resolvedStyle.name,
+          resolvedStyle.value
+        )};`;
     }
 
     content = content + "}";
@@ -309,12 +316,14 @@ const keyframesToCacheValue = ({
 const applyKeyframes = ({
   keyframes,
   cache,
+  resolveStyle,
   appendKeyframes,
   __development__enableVerboseClassnames
 }) => {
   return keyframesToCacheValue({
     keyframes,
     cache,
+    resolveStyle,
     appendKeyframes,
     __development__enableVerboseClassnames
   });
@@ -457,10 +466,14 @@ export const StylesProvider = ({
           []
         ),
         keyframes: React.useCallback(
-          (keyframes, { __development__enableVerboseClassnames } = {}) =>
+          (
+            keyframes,
+            { resolveStyle, __development__enableVerboseClassnames } = {}
+          ) =>
             applyKeyframes({
               keyframes,
               cache: initialKeyframesCache,
+              resolveStyle,
               appendKeyframes,
               __development__enableVerboseClassnames:
                 __development__enableVerboseClassnames ??
