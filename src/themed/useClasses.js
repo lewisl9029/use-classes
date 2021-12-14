@@ -45,6 +45,7 @@ const resolveStyleFromTheme = theme => {
 //     | Styles[Key]
 // }
 
+// TODO: explore what perf profile looks like if we get rid of resolveStyle and implement caching at this layer
 export const useClasses = theme => {
   const classes = useClassesBasic.useClasses();
   return React.useCallback(
@@ -65,6 +66,14 @@ export const useClassesForMediaQueries = theme => {
   const classes = useClassesBasic.useClassesForMediaQueries();
   return React.useCallback(
     styles => classes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
+    [theme]
+  );
+};
+
+export const useKeyframes = theme => {
+  const keyframes = useClassesBasic.useKeyframes();
+  return React.useCallback(
+    styles => keyframes(styles, { resolveStyle: resolveStyleFromTheme(theme) }),
     [theme]
   );
 };

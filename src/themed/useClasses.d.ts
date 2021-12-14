@@ -78,4 +78,10 @@ type ThemedMediaQueries<Theme> = {
  */
 export function useClassesForMediaQueries<Theme>(theme: Theme): ClassesForMediaQueries<Theme>
 
+type KeyframesName = string
+
+type Keyframes<Theme> = (keyframes: { [selector: string]: Styles<Theme> }) => KeyframesName
+
+export function useKeyframes<Theme>(): Keyframes<Theme>
+
 export { StylesProvider } from '../basic/useClasses'
