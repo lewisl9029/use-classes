@@ -82,6 +82,6 @@ type KeyframesName = string
 
 type Keyframes<Theme> = (keyframes: { [selector: string]: Styles<Theme> }) => KeyframesName
 
-export function useKeyframes<Theme>(): Keyframes<Theme>
+export function useKeyframes<Theme>(theme: Theme): Keyframes<Theme>
 
 export { StylesProvider } from '../basic/useClasses'
