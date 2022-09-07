@@ -1880,6 +1880,8 @@ __metadata:
   resolution: "@lewisl9029/use-classes@workspace:."
   dependencies:
     csstype: ^3.0.10
+  peerDependencies:
+    react: ">=16.8.0"
   languageName: unknown
   linkType: soft
 
