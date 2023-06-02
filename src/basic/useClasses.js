@@ -155,15 +155,9 @@ const applyPseudos = ({
   appendRule,
   __development__enableVerboseClassnames
 }) => {
-  const pseudosEntries = Object.entries(pseudos);
-
   let cacheValues = [];
-  for (
-    let pseudosEntriesIndex = 0;
-    pseudosEntriesIndex < pseudosEntries.length;
-    pseudosEntriesIndex++
-  ) {
-    const [pseudo, styles] = pseudosEntries[pseudosEntriesIndex];
+  for (const pseudo in pseudos) {
+    const styles = pseudos[pseudo];
 
     cacheValues.push(
       ...applyStyles({
@@ -188,34 +182,22 @@ const applyStylesOrPseudos = ({
   appendRule,
   __development__enableVerboseClassnames
 }) => {
-  const stylesOrPseudosEntries = Object.entries(stylesOrPseudos);
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudos or media queries are present, so
   // style & cache length are equal
-  let cacheValues = new Array(stylesOrPseudosEntries.length);
-  let cacheValuesIndex = 0;
+  let cacheValues = [];
+  let index = 0;
   // let cacheValues = [];
-  for (
-    let stylesOrPseudosEntriesIndex = 0;
-    stylesOrPseudosEntriesIndex < stylesOrPseudosEntries.length;
-    stylesOrPseudosEntriesIndex++
-  ) {
-    const [entryName, entryValue] = stylesOrPseudosEntries[
-      stylesOrPseudosEntriesIndex
-    ];
+  for (const entryName in stylesOrPseudos) {
+    const entryValue = stylesOrPseudos[entryName];
 
     // startsWith might actually be faster than entryName[0] here!
     // https://stackoverflow.com/a/62093300
     if (entryName.startsWith(":")) {
-      const stylesEntries = Object.entries(entryValue);
-      for (
-        let stylesEntriesIndex = 0;
-        stylesEntriesIndex < stylesEntries.length;
-        stylesEntriesIndex++
-      ) {
-        const [name, value] = stylesEntries[stylesEntriesIndex];
+      for (const name in entryValue) {
+        const value = entryValue[name];
 
-        cacheValues[cacheValuesIndex] = styleToCacheValue({
+        cacheValues[index] = styleToCacheValue({
           style: { name, value },
           pseudo: entryName,
           mediaQuery,
@@ -224,12 +206,12 @@ const applyStylesOrPseudos = ({
           appendRule,
           __development__enableVerboseClassnames
         });
-        cacheValuesIndex++;
+        index++;
       }
       continue;
     }
 
-    cacheValues[cacheValuesIndex] = styleToCacheValue({
+    cacheValues[index] = styleToCacheValue({
       style: { name: entryName, value: entryValue },
       mediaQuery,
       cache,
@@ -237,7 +219,7 @@ const applyStylesOrPseudos = ({
       appendRule,
       __development__enableVerboseClassnames
     });
-    cacheValuesIndex++;
+    index++;
   }
 
   return cacheValues;
@@ -253,15 +235,9 @@ const applyMediaQueries = ({
   appendRule,
   __development__enableVerboseClassnames
 }) => {
-  const mediaQueriesEntries = Object.entries(mediaQueries);
   let cacheValues = [];
-  for (
-    let mediaQueriesEntriesIndex = 0;
-    mediaQueriesEntriesIndex < mediaQueriesEntries.length;
-    mediaQueriesEntriesIndex++
-  ) {
-    const mediaQueriesEntry = mediaQueriesEntries[mediaQueriesEntriesIndex];
-    const [mediaQuery, stylesOrPseudos] = mediaQueriesEntry;
+  for (const mediaQuery in mediaQueries) {
+    const stylesOrPseudos = mediaQueries[mediaQuery];
 
     // This is probably slower than directly pushing each result, but I really
     // don't want to have to start sharing mutative counters
