@@ -125,11 +125,11 @@ const applyStyles = ({
   appendRule,
   __development__enableVerboseClassnames
 }) => {
+  let cacheValues = [];
+  let index = 0;
   // Reuse styles entries array to avoid extra allocations.
-  let cacheValues = Object.entries(styles);
-
-  for (let index = 0; index < cacheValues.length; index++) {
-    const [name, value] = cacheValues[index];
+  for (const name in styles) {
+    const value = styles[name];
 
     cacheValues[index] = styleToCacheValue({
       style: { name, value },
@@ -140,6 +140,7 @@ const applyStyles = ({
       appendRule,
       __development__enableVerboseClassnames
     });
+    index++;
   }
 
   return cacheValues;
