@@ -55,7 +55,7 @@
     "memoize-one": "^5.0.4",
     "merge-anything": "^2.2.5",
     "style-loader": "^0.23.1",
-    "tachometer": "^0.5.10",
+    "tachometer": "^0.7.0",
     "webpack": "^5.64.3",
     "webpack-bundle-analyzer": "^3.3.2",
     "webpack-cli": "^3.3.3"
