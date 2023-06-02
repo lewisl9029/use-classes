@@ -12,15 +12,6 @@
       }
     },
     {
-      "name": "use-classes-themed",
-      "url": "dist/index.html?library=use-classes-themed&benchmark=deep",
-      "measurement": "global",
-      "browser": {
-        "name": "chrome",
-        "headless": true
-      }
-    },
-    {
       "name": "use-classes-pub",
       "url": "dist/index.html?library=use-classes-published&benchmark=deep",
       "measurement": "global",
