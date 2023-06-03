@@ -107,14 +107,14 @@ const styleToCacheValue = ({
   //
   // Actually tried benchmarking with useInsertionEffect in React 18, but it
   // turned out to be slower: https://github.com/lewisl9029/use-styles/pull/25
-
   const rule = {
     // media query & psuedoclass need to be a part of id to allow distinct targetting
     className: __development__enableVerboseClassnames
-      ? `r_${escapeCssName(
-          `${mediaQuery ?? "-"}_${pseudo ?? "-"}_${name}_${value}`
-        )}`
-      : `r_${hash(`${mediaQuery}_${pseudo}_${name}_${value}`)}`,
+      ? "r_" +
+        escapeCssName(
+          (mediaQuery ?? "-") + "_" + (pseudo ?? "-") + name + "_" + value
+        )
+      : "r_" + hash(mediaQuery + "_" + pseudo + "_" + name + "_" + value),
     pseudo,
     mediaQuery,
     name: hyphenate(name, { cache: cache.hyphenate }),
@@ -288,24 +288,28 @@ const keyframesToCacheValue = ({
   for (const selector in keyframes) {
     const declarations = keyframes[selector];
 
-    content += `${selector}{`;
+    content += selector + "{";
 
     for (const name in declarations) {
       const value = declarations[name];
       const resolvedStyle = resolveStyle?.({ name, value }) ?? { name, value };
-      content += `${hyphenate(resolvedStyle.name, {
-        cache: cache.hyphenate
-      })}:${unitize(resolvedStyle.name, resolvedStyle.value, {
-        cache: cache.unitize
-      })};`;
+      content +=
+        hyphenate(resolvedStyle.name, {
+          cache: cache.hyphenate
+        }) +
+        ":" +
+        unitize(resolvedStyle.name, resolvedStyle.value, {
+          cache: cache.unitize
+        }) +
+        ";";
     }
 
     content += "}";
   }
 
   const name = __development__enableVerboseClassnames
-    ? `r_k_${escapeCssName(content)}`
-    : `r_k_${hash(content)}`;
+    ? "r_k_" + escapeCssName(content)
+    : "r_k_" + hash(content);
 
   const keyframeCached = cache.keyframes.get(name);
   if (keyframeCached) {
@@ -344,7 +348,7 @@ export const StylesProvider = ({
   const stylesheetRef = React.useRef(initialStylesheet);
 
   const insertStylesheet = React.useCallback(() => {
-    const id = `useClassesStylesheet`;
+    const id = "useClassesStylesheet";
     const existingElement = window.document.getElementById(id);
 
     if (existingElement) {
@@ -378,9 +382,9 @@ export const StylesProvider = ({
       insertStylesheet();
     }
 
-    const rule = `.${className}${pseudo} {${name}:${value};}`;
+    const rule = "." + className + pseudo + " {" + name + ":" + value + ";}";
     stylesheetRef.current.insertRule(
-      mediaQuery ? `${mediaQuery} {${rule}}` : rule,
+      mediaQuery ? mediaQuery + " {" + rule + "}" : rule,
       // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
       // TODO: longer term we should consider splitting media queries into separate hooks.
       // Also, specificity api.
@@ -398,7 +402,7 @@ export const StylesProvider = ({
       insertStylesheet();
     }
 
-    const rule = `@keyframes ${name} {${content}}`;
+    const rule = "@keyframes " + name + " " + content + "}";
 
     stylesheetRef.current.insertRule(
       rule,

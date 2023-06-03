@@ -65,7 +65,7 @@ export const unitize = (name, value, { cache }) => {
   }
 
   if (typeof value === "number" && value !== 0 && !unitlessKeys[name]) {
-    return (cachedName[value] = `${value}px`); // Presumes implicit 'px' suffix for unitless numbers
+    return (cachedName[value] = value + "px"); // Presumes implicit 'px' suffix for unitless numbers
   }
 
   return (cachedName[value] = String(value).trim());
