@@ -13,8 +13,6 @@ const defaultCache = {
   hyphenate: new Map(),
   unitize: new Map(),
   styles: new Map(),
-  pseudos: new Map(),
-  mediaQueries: new Map(),
   keyframes: new Map()
 };
 
@@ -309,12 +307,15 @@ const keyframesToCacheValue = ({
     ? `r_k_${escapeCssName(content)}`
     : `r_k_${hash(content)}`;
 
-  if (cache.keyframes[name]) {
-    return cache.keyframes[name];
+  const keyframeCached = cache.keyframes.get(name);
+  if (keyframeCached) {
+    return keyframeCached;
   }
 
-  cache.keyframes[name] = { name, content };
-  return appendKeyframes(cache.keyframes[name]);
+  const keyframe = { name, content };
+
+  keyframeCached.set(name, keyframe);
+  return appendKeyframes(keyframe);
 };
 
 const applyKeyframes = ({
