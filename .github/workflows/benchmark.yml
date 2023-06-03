@@ -4,10 +4,12 @@
 name: benchmark
 
 on:
+  pull_request:
+    types: [opened, synchronize, edited]
   push:
     # Sequence of patterns matched against refs/tags
     branches:
-      - "*"
+      - "main"
     # tags:
     #   - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
