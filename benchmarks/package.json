@@ -6,7 +6,7 @@
     "build": "ASSET_PATH='./' webpack-cli --config webpack.config.js",
     "start": "webpack-dev-server",
     "start-dev": "cross-env NODE_ENV=development webpack-dev-server",
-    "benchmark": "tachometer --config tachometer.json"
+    "benchmark": "tachometer --config tachometer.json --json-file results.json"
   },
   "dependencies": {
     "@emotion-11/styled": "npm:@emotion/styled@^11.6.0",

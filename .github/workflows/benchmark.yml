@@ -58,3 +58,8 @@ jobs:
 
       - working-directory: ./benchmarks
         run: xvfb-run --auto-servernum yarn benchmark
+
+      - name: Report Tachometer Result
+        uses: andrewiggins/tachometer-reporter-action@v2
+        with:
+          path: ./benchmarks/results.json
