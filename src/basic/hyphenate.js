@@ -7,7 +7,7 @@
 const uppercaseCheck = /([A-Z])/;
 const uppercasePattern = /([A-Z])/g;
 const msPattern = /^ms-/;
-const prefixAndLowerCase = char => `-${char.toLowerCase()}`;
+const prefixAndLowerCase = char => "-" + char.toLowerCase();
 
 /**
  * Hyphenates a camelcased CSS property name, for example:
