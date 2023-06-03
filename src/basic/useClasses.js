@@ -10,12 +10,10 @@ import cacheContext from "./cacheContext.js";
 //   - For.. of/in.. loops instead of entries then looping?
 
 const defaultCache = {
-  hyphenate: {},
-  unitize: {},
-  styles: {},
-  pseudos: {},
-  mediaQueries: {},
-  keyframes: {}
+  hyphenate: new Map(),
+  unitize: new Map(),
+  styles: new Map(),
+  keyframes: new Map()
 };
 
 // const measure = (name, fn) => {
@@ -74,21 +72,33 @@ const styleToCacheValue = ({
     return undefined;
   }
 
-  const existingCacheValue =
-    cache.styles[mediaQuery]?.[pseudo]?.[name]?.[value];
+  const existingCacheValue = cache.styles
+    .get(mediaQuery)
+    ?.get(pseudo)
+    ?.get(name)
+    ?.get(value);
 
   if (existingCacheValue) {
     return existingCacheValue;
   }
 
-  if (!cache.styles[mediaQuery]) {
-    cache.styles[mediaQuery] = {};
+  let mediaQueriesCached = cache.styles.get(mediaQuery);
+
+  if (!mediaQueriesCached) {
+    mediaQueriesCached = new Map();
+    cache.styles.set(mediaQuery, mediaQueriesCached);
   }
-  if (!cache.styles[mediaQuery][pseudo]) {
-    cache.styles[mediaQuery][pseudo] = {};
+  let pseudosCached = mediaQueriesCached.get(pseudo);
+
+  if (!pseudosCached) {
+    pseudosCached = new Map();
+    mediaQueriesCached.set(pseudo, pseudosCached);
   }
-  if (!cache.styles[mediaQuery][pseudo][name]) {
-    cache.styles[mediaQuery][pseudo][name] = {};
+
+  let stylesCached = pseudosCached.get(name);
+  if (!stylesCached) {
+    stylesCached = new Map();
+    pseudosCached.set(name, stylesCached);
   }
 
   // This ends up happening during render. That sounds unsafe, but is actually
@@ -97,21 +107,22 @@ const styleToCacheValue = ({
   //
   // Actually tried benchmarking with useInsertionEffect in React 18, but it
   // turned out to be slower: https://github.com/lewisl9029/use-styles/pull/25
-  return appendRule(
-    (cache.styles[mediaQuery][pseudo][name][value] = {
-      // media query & psuedoclass need to be a part of id to allow distinct targetting
-      className: __development__enableVerboseClassnames
-        ? "r_" +
-          escapeCssName(
-            (mediaQuery ?? "-") + "_" + (pseudo ?? "-") + name + "_" + value
-          )
-        : "r_" + hash(mediaQuery + "_" + pseudo + "_" + name + "_" + value),
-      pseudo,
-      mediaQuery,
-      name: hyphenate(name, { cache: cache.hyphenate }),
-      value: unitize(name, value, { cache: cache.unitize })
-    })
-  );
+  const rule = {
+    // media query & psuedoclass need to be a part of id to allow distinct targetting
+    className: __development__enableVerboseClassnames
+      ? "r_" +
+        escapeCssName(
+          (mediaQuery ?? "-") + "_" + (pseudo ?? "-") + name + "_" + value
+        )
+      : "r_" + hash(mediaQuery + "_" + pseudo + "_" + name + "_" + value),
+    pseudo,
+    mediaQuery,
+    name: hyphenate(name, { cache: cache.hyphenate }),
+    value: unitize(name, value, { cache: cache.unitize })
+  };
+
+  stylesCached.set(value, rule);
+  return appendRule(rule);
 };
 
 // TODO: explore using persistent collections for perf. There will be overhead
@@ -300,12 +311,15 @@ const keyframesToCacheValue = ({
     ? "r_k_" + escapeCssName(content)
     : "r_k_" + hash(content);
 
-  if (cache.keyframes[name]) {
-    return cache.keyframes[name];
+  const keyframeCached = cache.keyframes.get(name);
+  if (keyframeCached) {
+    return keyframeCached;
   }
 
-  cache.keyframes[name] = { name, content };
-  return appendKeyframes(cache.keyframes[name]);
+  const keyframe = { name, content };
+
+  keyframeCached.set(name, keyframe);
+  return appendKeyframes(keyframe);
 };
 
 const applyKeyframes = ({
