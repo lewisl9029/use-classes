@@ -322,10 +322,11 @@ const applyKeyframes = ({
 export const StylesProvider = ({
   children,
   options = {},
+  initialStylesheet = undefined,
   // TODO: cache import/export
   initialCache = defaultCache
 }) => {
-  const stylesheetRef = React.useRef();
+  const stylesheetRef = React.useRef(initialStylesheet);
 
   const insertStylesheet = React.useCallback(() => {
     const id = `useClassesStylesheet`;
