@@ -1866,7 +1866,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lewisl9029/use-classes@0.0.10, @lewisl9029/use-classes@workspace:.":
+"@lewisl9029/use-classes@npm:0.0.10":
+  version: 0.0.10
+  resolution: "@lewisl9029/use-classes@npm:0.0.10"
+  dependencies:
+    csstype: ^3.0.10
+  peerDependencies:
+    react: ">=16.8.0"
+  checksum: 40082fa1fc22fd3fcc15f37cc01b325cdd802266c71b852e8eccc8c85ab38290a3b0067b531cbb873641692e7a010f8eee0c2a11d11e45b5e8e86671d0bc62da
+  languageName: node
+  linkType: hard
+
+"@lewisl9029/use-classes@workspace:.":
   version: 0.0.0-use.local
   resolution: "@lewisl9029/use-classes@workspace:."
   dependencies:
