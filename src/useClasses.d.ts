@@ -1,19 +1,19 @@
 import * as Csstype from "csstype";
-import * as React from 'react';
+import * as React from "react";
 
 /**
- * An object with camel-cased CSS property names as keys, and CSS property values 
+ * An object with camel-cased CSS property names as keys, and CSS property values
  * as values.
  */
 type Styles = Csstype.Properties<string | number, number>;
 
 /**
  * A string of css class names to pass in to className prop of any element.
- * 
+ *
  * A trailing space is added to the end to make it easy to combine multiple
  * `ClassNames` strings with `+`.
  */
-type ClassNames = string
+type ClassNames = string;
 
 /**
  * Can be called with a CSS styles object and returns a {@link ClassNames} string that
@@ -22,64 +22,77 @@ type ClassNames = string
  * Multiple calls to `classes` and its variants can be concatenated together
  * with `+` thanks to the built-in trailing space.
  */
-type Classes = (styles: Styles) => ClassNames
+type Classes = (styles: Styles) => ClassNames;
 
 /**
  * A low level building block to style React elements with great performance and
  * minimal indirection.
  */
-export function useClasses(): Classes
+export function useClasses(): Classes;
 
 /**
  * An object with pseudo classes/elements as keys, and {@link Styles} objects as values.
  */
- type Pseudos = { [_Key in `${Csstype.Pseudos}${string}`]: Styles };
+type Pseudos = { [_Key in `${Csstype.Pseudos}${string}`]: Styles };
 
 /**
- * A variant of {@link Classes} used for pseudo classes/elements. 
+ * A variant of {@link Classes} used for pseudo classes/elements.
  *
  * Can be called with an object with pseudo class/element names as keys and
  * {@link Styles} objects as values, and returns a {@link ClassNames} string
  * that can be passed directly into a `className` prop on any element.
  */
- type ClassesForPseudos = (styles: Pseudos) => ClassNames
+type ClassesForPseudos = (styles: Pseudos) => ClassNames;
 
 /**
  * A variant of {@link useClasses} used for pseudo classes/elements.
  */
-export function useClassesForPseudos(): ClassesForPseudos
+export function useClassesForPseudos(): ClassesForPseudos;
 
 /**
  * An object with media query strings as keys, and {@link Styles} or {@link Pseudos}
  * objects as values.
  */
- type MediaQueries =
- | {
-     [_Key in `@media ${string}`]: Pseudos | Styles;
-   };
+type MediaQueries =
+  | {
+      [_Key in `@media ${string}`]: Pseudos | Styles;
+    };
 
 /**
- * A variant of {@link Classes} used for media queries. 
+ * A variant of {@link Classes} used for media queries.
  *
  * Can be called with an object with media query strings as keys and either
  * {@link Pseudos} or {@link Styles} objects as values, and returns a
  * {@link ClassNames} string that can be passed directly into a `className` prop
  * on any element.
  */
- type ClassesForMediaQueries = (styles: Pseudos) => ClassNames
+type ClassesForMediaQueries = (styles: Pseudos) => ClassNames;
 
 /**
  * A variant of {@link useClasses} used for media queries.
  */
-export function useClassesForMediaQueries(): ClassesForMediaQueries
+export function useClassesForMediaQueries(): ClassesForMediaQueries;
 
-type KeyframesName = string
+type KeyframesName = string;
 
-type Keyframes = (keyframes: { [selector: string]: Styles }) => KeyframesName
+type Keyframes = (keyframes: { [selector: string]: Styles }) => KeyframesName;
 
-export function useKeyframes(): Keyframes
+export function useKeyframes(): Keyframes;
 
 /**
  * Provides a centralized cache and global options to downstream useClasses hooks.
  */
-export function StylesProvider({ children }: {children: React.ReactNode}): JSX.Element
+export function StylesProvider({
+  children,
+  initialStylesheet,
+}: {
+  children: React.ReactNode;
+  /**
+   * Provide an optional StyleSheet to inject styles into. A new stylesheet will
+   * be created and inserted by default.
+   *
+   * Can be useful when you need more control over where and how the stylesheet is
+   * inserted, e.g. for rendering in Shadow DOM.
+   */
+  initialStylesheet?: StyleSheet;
+}): JSX.Element;
