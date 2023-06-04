@@ -45,30 +45,20 @@ let unitlessKeys = {
   strokeDashoffset: 1,
   strokeMiterlimit: 1,
   strokeOpacity: 1,
-  strokeWidth: 1
+  strokeWidth: 1,
 };
 
 // Taken from https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/react-dom/src/shared/dangerousStyleValue.js
-export const unitize = (name, value, { cache }) => {
-  let cachedName = cache[name];
-  if (!cachedName) {
-    cachedName = cache[name] = {};
-  }
-
-  const cachedValue = cachedName[value];
-  if (cachedValue) {
-    return cachedValue;
-  }
-
+export const unitize = (name, value) => {
   if (value == null || typeof value === "boolean" || value === "") {
-    return (cachedName[value] = "");
+    return "";
   }
 
   if (typeof value === "number" && value !== 0 && !unitlessKeys[name]) {
-    return (cachedName[value] = value + "px"); // Presumes implicit 'px' suffix for unitless numbers
+    return value + "px"; // Presumes implicit 'px' suffix for unitless numbers
   }
 
-  return (cachedName[value] = String(value).trim());
+  return String(value).trim();
 };
 
 export default unitize;
