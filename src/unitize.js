@@ -45,7 +45,7 @@ let unitlessKeys = {
   strokeDashoffset: 1,
   strokeMiterlimit: 1,
   strokeOpacity: 1,
-  strokeWidth: 1
+  strokeWidth: 1,
 };
 
 // Taken from https://github.com/facebook/react/blob/b87aabdfe1b7461e7331abb3601d9e6bb27544bc/packages/react-dom/src/shared/dangerousStyleValue.js
@@ -55,7 +55,7 @@ export const unitize = (name, value) => {
   }
 
   if (typeof value === "number" && value !== 0 && !unitlessKeys[name]) {
-    return `${value}px`; // Presumes implicit 'px' suffix for unitless numbers
+    return value + "px"; // Presumes implicit 'px' suffix for unitless numbers
   }
 
   return String(value).trim();

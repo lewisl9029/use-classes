@@ -15,7 +15,7 @@ const defaultCache = {
   styles: {},
   pseudos: {},
   mediaQueries: {},
-  keyframes: {}
+  keyframes: {},
 };
 
 // const measure = (name, fn) => {
@@ -36,11 +36,11 @@ const measure = (name, fn) => fn();
 
 // Significantly more performant than `list.flat()`: https://stackoverflow.com/a/61416753
 // TODO: explore manual looping
-const flatten = list => [].concat(...list);
+const flatten = (list) => [].concat(...list);
 
-const escapeCssName = string => CSS.escape(string).replaceAll(/\\./g, "_");
+const escapeCssName = (string) => CSS.escape(string).replaceAll(/\\./g, "_");
 
-const cacheValuesToClasses = cacheValues => {
+const cacheValuesToClasses = (cacheValues) => {
   let classNames = "";
   for (let index = 0; index < cacheValues.length; index++) {
     if (cacheValues[index] === undefined) {
@@ -58,17 +58,12 @@ const styleToCacheValue = ({
   pseudo,
   mediaQuery,
   cache,
-  resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
-  // TODO: think of a more cacheable way to implement theme resolution.
-  // can potentially use weakmaps with the resolveStyle function reference,
-  // but that won't be serializable.
-  //
   // TODO: think about supporting things like auto-prefixers that translate 1 style into multiple
   // Probably need to hoist up a level and then flatten
-  const { name, value } = resolveStyle?.(style) ?? style;
+  const { name, value } = style;
 
   if (value === undefined) {
     return undefined;
@@ -101,14 +96,15 @@ const styleToCacheValue = ({
     (cache.styles[mediaQuery][pseudo][name][value] = {
       // media query & psuedoclass need to be a part of id to allow distinct targetting
       className: __development__enableVerboseClassnames
-        ? `r_${escapeCssName(
-            `${mediaQuery ?? "-"}_${pseudo ?? "-"}_${name}_${value}`
-          )}`
-        : `r_${hash(`${mediaQuery}_${pseudo}_${name}_${value}`)}`,
+        ? "r_" +
+          escapeCssName(
+            (mediaQuery ?? "-") + "_" + (pseudo ?? "-") + name + "_" + value
+          )
+        : "r_" + hash(mediaQuery + "_" + pseudo + "_" + name + "_" + value),
       pseudo,
       mediaQuery,
       name: hyphenate(name, { cache: cache.hyphenate }),
-      value: unitize(name, value, { cache: cache.unitize })
+      value: unitize(name, value, { cache: cache.unitize }),
     })
   );
 };
@@ -121,9 +117,8 @@ const applyStyles = ({
   pseudo,
   mediaQuery,
   cache,
-  resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
   let cacheValues = [];
   let index = 0;
@@ -136,9 +131,8 @@ const applyStyles = ({
       pseudo,
       mediaQuery,
       cache,
-      resolveStyle,
       appendRule,
-      __development__enableVerboseClassnames
+      __development__enableVerboseClassnames,
     });
     index++;
   }
@@ -151,9 +145,8 @@ const applyStyles = ({
 const applyPseudos = ({
   pseudos,
   cache,
-  resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
   let cacheValues = [];
   for (const pseudo in pseudos) {
@@ -164,9 +157,8 @@ const applyPseudos = ({
         styles,
         pseudo,
         cache,
-        resolveStyle,
         appendRule,
-        __development__enableVerboseClassnames
+        __development__enableVerboseClassnames,
       })
     );
   }
@@ -178,9 +170,8 @@ const applyStylesOrPseudos = ({
   stylesOrPseudos,
   mediaQuery,
   cache,
-  resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
   // preallocate the array for original size of style entries to optimize for
   // most common case where no pseudos or media queries are present, so
@@ -202,9 +193,8 @@ const applyStylesOrPseudos = ({
           pseudo: entryName,
           mediaQuery,
           cache,
-          resolveStyle,
           appendRule,
-          __development__enableVerboseClassnames
+          __development__enableVerboseClassnames,
         });
         index++;
       }
@@ -215,9 +205,8 @@ const applyStylesOrPseudos = ({
       style: { name: entryName, value: entryValue },
       mediaQuery,
       cache,
-      resolveStyle,
       appendRule,
-      __development__enableVerboseClassnames
+      __development__enableVerboseClassnames,
     });
     index++;
   }
@@ -231,9 +220,8 @@ const applyStylesOrPseudos = ({
 const applyMediaQueries = ({
   mediaQueries,
   cache,
-  resolveStyle,
   appendRule,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
   let cacheValues = [];
   for (const mediaQuery in mediaQueries) {
@@ -246,9 +234,8 @@ const applyMediaQueries = ({
         stylesOrPseudos,
         mediaQuery,
         cache,
-        resolveStyle,
         appendRule,
-        __development__enableVerboseClassnames
+        __development__enableVerboseClassnames,
       })
     );
   }
@@ -267,33 +254,36 @@ const applyMediaQueries = ({
 const keyframesToCacheValue = ({
   keyframes,
   cache,
-  resolveStyle,
   appendKeyframes,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
   let content = "";
 
   for (const selector in keyframes) {
     const declarations = keyframes[selector];
 
-    content += `${selector}{`;
+    content += selector + "{";
 
     for (const name in declarations) {
       const value = declarations[name];
-      const resolvedStyle = resolveStyle?.({ name, value }) ?? { name, value };
-      content += `${hyphenate(resolvedStyle.name, {
-        cache: cache.hyphenate
-      })}:${unitize(resolvedStyle.name, resolvedStyle.value, {
-        cache: cache.unitize
-      })};`;
+      const resolvedStyle = { name, value };
+      content +=
+        hyphenate(resolvedStyle.name, {
+          cache: cache.hyphenate,
+        }) +
+        ":" +
+        unitize(resolvedStyle.name, resolvedStyle.value, {
+          cache: cache.unitize,
+        }) +
+        ";";
     }
 
     content += "}";
   }
 
   const name = __development__enableVerboseClassnames
-    ? `r_k_${escapeCssName(content)}`
-    : `r_k_${hash(content)}`;
+    ? "r_k_" + escapeCssName(content)
+    : "r_k_" + hash(content);
 
   if (cache.keyframes[name]) {
     return cache.keyframes[name];
@@ -306,16 +296,14 @@ const keyframesToCacheValue = ({
 const applyKeyframes = ({
   keyframes,
   cache,
-  resolveStyle,
   appendKeyframes,
-  __development__enableVerboseClassnames
+  __development__enableVerboseClassnames,
 }) => {
   return keyframesToCacheValue({
     keyframes,
     cache,
-    resolveStyle,
     appendKeyframes,
-    __development__enableVerboseClassnames
+    __development__enableVerboseClassnames,
   });
 };
 
@@ -324,12 +312,12 @@ export const StylesProvider = ({
   options = {},
   initialStylesheet = undefined,
   // TODO: cache import/export
-  initialCache = defaultCache
+  initialCache = defaultCache,
 }) => {
   const stylesheetRef = React.useRef(initialStylesheet);
 
   const insertStylesheet = React.useCallback(() => {
-    const id = `useClassesStylesheet`;
+    const id = "useClassesStylesheet";
     const existingElement = window.document.getElementById(id);
 
     if (existingElement) {
@@ -357,15 +345,15 @@ export const StylesProvider = ({
     // }
   }, []);
 
-  const appendRule = React.useCallback(cacheValue => {
+  const appendRule = React.useCallback((cacheValue) => {
     const { className, pseudo = "", mediaQuery, name, value } = cacheValue;
     if (!stylesheetRef.current) {
       insertStylesheet();
     }
 
-    const rule = `.${className}${pseudo} {${name}:${value};}`;
+    const rule = "." + className + pseudo + " {" + name + ":" + value + ";}";
     stylesheetRef.current.insertRule(
-      mediaQuery ? `${mediaQuery} {${rule}}` : rule,
+      mediaQuery ? mediaQuery + " {" + rule + "}" : rule,
       // Add newer rules to end of stylesheet, makes media query usage a bit more intuitive
       // TODO: longer term we should consider splitting media queries into separate hooks.
       // Also, specificity api.
@@ -377,13 +365,13 @@ export const StylesProvider = ({
 
   // TODO: we should really split the other caches too for perf, would
   // significantly reduce cache depth and the number of checks for base case
-  const appendKeyframes = React.useCallback(keyframesCacheValue => {
+  const appendKeyframes = React.useCallback((keyframesCacheValue) => {
     const { name, content } = keyframesCacheValue;
     if (!stylesheetRef.current) {
       insertStylesheet();
     }
 
-    const rule = `@keyframes ${name} {${content}}`;
+    const rule = "@keyframes " + name + " " + content + "}";
 
     stylesheetRef.current.insertRule(
       rule,
@@ -399,78 +387,62 @@ export const StylesProvider = ({
     {
       value: {
         classes: React.useCallback(
-          (
-            styles,
-            { resolveStyle, __development__enableVerboseClassnames } = {}
-          ) =>
+          (styles, { __development__enableVerboseClassnames } = {}) =>
             cacheValuesToClasses(
               applyStyles({
                 styles,
                 cache: initialCache,
-                resolveStyle,
                 appendRule,
                 __development__enableVerboseClassnames:
                   __development__enableVerboseClassnames ??
                   // intentionally not including this dependency for perf
                   // TODO: let users know it requires a refresh
-                  options.__development__enableVerboseClassnames
+                  options.__development__enableVerboseClassnames,
               })
             ),
           []
         ),
         classesForPseudos: React.useCallback(
-          (
-            pseudos,
-            { resolveStyle, __development__enableVerboseClassnames } = {}
-          ) =>
+          (pseudos, { __development__enableVerboseClassnames } = {}) =>
             cacheValuesToClasses(
               applyPseudos({
                 pseudos,
                 cache: initialCache,
-                resolveStyle,
                 appendRule,
                 __development__enableVerboseClassnames:
                   __development__enableVerboseClassnames ??
-                  options.__development__enableVerboseClassnames
+                  options.__development__enableVerboseClassnames,
               })
             ),
           []
         ),
         classesForMediaQueries: React.useCallback(
-          (
-            mediaQueries,
-            { resolveStyle, __development__enableVerboseClassnames } = {}
-          ) =>
+          (mediaQueries, { __development__enableVerboseClassnames } = {}) =>
             cacheValuesToClasses(
               applyMediaQueries({
                 mediaQueries,
                 cache: initialCache,
-                resolveStyle,
                 appendRule,
                 __development__enableVerboseClassnames:
                   __development__enableVerboseClassnames ??
-                  options.__development__enableVerboseClassnames
+                  options.__development__enableVerboseClassnames,
               })
             ),
           []
         ),
         keyframes: React.useCallback(
-          (
-            keyframes,
-            { resolveStyle, __development__enableVerboseClassnames } = {}
-          ) =>
+          (keyframes, { __development__enableVerboseClassnames } = {}) =>
             applyKeyframes({
               keyframes,
               cache: initialCache,
-              resolveStyle,
               appendKeyframes,
               __development__enableVerboseClassnames:
                 __development__enableVerboseClassnames ??
-                options.__development__enableVerboseClassnames
+                options.__development__enableVerboseClassnames,
             }).name,
           []
-        )
-      }
+        ),
+      },
     },
     children
   );
